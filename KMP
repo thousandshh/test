@@ -1,3 +1,98 @@
+Approach 3: Depth-First Search
+Intuition
+The previous solution used two separate DFS traversals: one to determine Bob’s path and another to explore Alice’s optimal path. However, this causes redundancy, as each node may be visited twice. 
+Instead, we can optimize the process by combining both tasks into asingle DFS traversal, ensuring that we only explore each node once.
+
+Our strategy is to use DFS to simultaneously track Bob’s path and compute Alice’s best possible income. Here, we first establish Bob’s travel time to each node. 
+We initialize all node distances ton, a value greater than any possible travel time. As we traverse the tree, if a node is part of Bob’s path to0, we update its distance to reflect how long it takes for Bob to reach it. 
+Nodes not on Bob’s path retain their initial value, ensuring that they are always considered as being reachedafterAlice.
+
+With Bob’s travel times recorded, we can now determine how much Alice collects from each node while recursively traversing the tree. 
+As Alice moves, we compare her arrival time at each node to Bob’s recorded time. If she reaches a node before Bob, she collects thefull amount. 
+If she and Bob arrive at the same time, she getshalf. If she arrives after Bob, she receivesnothing. By structuring the traversal this way, Alice's maximum income is updated dynamically as she moves deeper into the tree. 
+This ensures that we efficiently compute the highest possible income while keeping the traversal to just one DFS pass.
+
+Algorithm
+Initializetreeas an adjacency list to store the tree structure.
+
+InitializedistanceFromBobas an array to store the shortest distance of each node from Bob.
+
+Store the number of nodesn.
+
+Define a Depth-First Search (DFS) functionfindPaths:
+
+InitializemaxIncometo 0 andmaxChildtoINT_MINto track the maximum income path.
+IfsourceNodeisbob, set its distance to 0; otherwise, set it ton(a large value).
+Iterate throughadjacentNodeofsourceNode:
+IfadjacentNodeis notparentNode, recursively callfindPathsfor the child node.
+UpdatedistanceFromBob[sourceNode]as the minimum of its current value and the child's distance plus one.
+If Alice reaches the node first (distanceFromBob[sourceNode] > time), add the node’samounttomaxIncome.
+If Alice and Bob reach the node at the same time (distanceFromBob[sourceNode] == time), add half ofamount[sourceNode]tomaxIncome.
+IfmaxChildremainsINT_MIN, returnmaxIncome(indicating a leaf node).
+Otherwise, returnmaxIncome + maxChild(adding the best income from child nodes).
+DefinemostProfitablePathfunction:
+
+Setnas the number of nodes.
+Resizetreeto storenempty lists.
+Iterate throughedgesand build the adjacency list representation of the tree.
+ResizedistanceFromBobto storendistances.
+Return the result offindPaths(0, 0, 0, bob, amount), starting from the root node.
+
+class Solution:
+    def __init__(self):
+        self.tree = []
+        self.distance_from_bob = []
+        self.n = 0
+
+    def mostProfitablePath(self, edges, bob, amount):
+        self.n = len(amount)
+        self.tree = [[] for _ in range(self.n)]
+        self.distance_from_bob = [0] * self.n
+
+        # Form tree with edges
+        for edge in edges:
+            self.tree[edge[0]].append(edge[1])
+            self.tree[edge[1]].append(edge[0])
+
+        return self.find_paths(0, 0, 0, bob, amount)
+
+    # Depth-first Search
+    def find_paths(self, source_node, parent_node, time, bob, amount):
+        max_income = 0
+        max_child = float("-inf")
+
+        # Find the node distances from Bob
+        if source_node == bob:
+            self.distance_from_bob[source_node] = 0
+        else:
+            self.distance_from_bob[source_node] = self.n
+
+        for adjacent_node in self.tree[source_node]:
+            if adjacent_node != parent_node:
+                max_child = max(
+                    max_child,
+                    self.find_paths(
+                        adjacent_node, source_node, time + 1, bob, amount
+                    ),
+                )
+                self.distance_from_bob[source_node] = min(
+                    self.distance_from_bob[source_node],
+                    self.distance_from_bob[adjacent_node] + 1,
+                )
+
+        # Alice reaches the node first
+        if self.distance_from_bob[source_node] > time:
+            max_income += amount[source_node]
+        # Alice and Bob reach the node at the same time
+        elif self.distance_from_bob[source_node] == time:
+            max_income += amount[source_node] // 2
+
+        # Return max income of leaf node
+        return (
+            max_income if max_child == float("-inf") else max_income + max_child
+        )
+
+
 https://youtu.be/ntsPz2nOC9s?si=3vSoKbeyVRpMUean
 
 Shortest Subarray with Sum at Least K
