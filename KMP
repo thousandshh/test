@@ -1,3 +1,5 @@
+Exchange option
+
 Approach 3: Depth-First Search
 Intuition
 The previous solution used two separate DFS traversals: one to determine Bob’s path and another to explore Alice’s optimal path. However, this causes redundancy, as each node may be visited twice. 
@@ -95,7 +97,122 @@ class Solution:
 
 https://youtu.be/ntsPz2nOC9s?si=3vSoKbeyVRpMUean
 
-Shortest Subarray with Sum at Least K
+862. Shortest Subarray with Sum at Least K
+Attempted
+Hard
+Topics
+Companies
+Given an integer array nums and an integer k, return the length of the shortest non-empty subarray of nums with a sum of at least k. If there is no such subarray, return -1.
+
+A subarray is a contiguous part of an array.
+
+ 
+
+Example 1:
+
+Input: nums = [1], k = 1
+Output: 1
+Example 2:
+
+Input: nums = [1,2], k = 4
+Output: -1
+Example 3:
+
+Input: nums = [2,-1,2], k = 3
+Output: 3
+
+Approach 3: Deque
+Intuition
+If we take a look at our previous approaches, we notice a recurring challenge: we need to find both the smallest sum and the largest index before our current position. This brings us to the question—can we use a data structure that helps us track both of these elements at the same time?
+
+The answer lies in using a deque, or double-ended queue. A deque allows us to add or remove items from either end, which is perfect for our needs. In this case, our deque will hold the indices of the prefix sums that might serve as the starting point for our target subarray. We also make sure that these sums form a monotonically increasing sequence. This monotonicity is important because if we encounter an earlier prefix sum that is greater than or equal to a later one, that later index will always give us a shorter subarray with an equal or greater sum for any future ending position.
+
+As we iterate through each position, we start by checking if we can find valid subarrays using the indices stored in our deque. We do this by calculating the difference between the current prefix sum and the prefix sum at the front of the deque. If this difference meets or exceeds our target sum, we’ve found a valid subarray. At this point, we update our shortestSubarrayLength and remove that starting index from the deque, since it won't help us find a shorter subarray with any future ending positions.
+
+Next, we need to maintain the monotonicity of our deque. We remove indices from the back of the deque if their prefix sums are greater than or equal to our current prefix sum. This step is crucial because any removed positions would only yield longer subarrays with the same or smaller sums, making them unnecessary for our purposes.
+
+Finally, we add our current index to the back of the deque because it could potentially be the starting point of a valid subarray in the future.
+
+By the time we finish iterating through the array, the variable shortestSubarrayLength will contain the length of the shortest subarray that meets our criteria.
+
+Algorithm
+Initialize:
+a variable n to store the length of the input array.
+an array prefixSums of size n+1 to store cumulative sums, where prefixSums[i] will represent the sum of elements from index 0 to i-1.
+Calculate prefix sums by iterating from 1 to n:
+Set prefixSums[i] as the sum of prefixSums[i-1] and nums[i-1]
+Initialize:
+a deque candidateIndices to store indices that could form valid subarrays.
+a variable shortestSubarrayLength to store the minimum length of a valid subarray, setting it to the maximum possible integer value.
+Iterate through each index i from 0 to n:
+While the deque is not empty and the difference between prefixSums[i] and prefixSums[first element of deque] is greater than or equal to targetSum:
+Update shortestSubarrayLength with the minimum of itself and (i - first element of deque).
+Remove the first element from the deque.
+While deque is not empty and prefixSums[i] is less than or equal to prefixSums[last element of deque]:
+Remove the last element from the deque.
+Add current index i to the end of the deque.
+Return -1 if shortestSubarrayLength remains unchanged at maximum integer value, otherwise return shortestSubarrayLength.
+
+class Solution:
+    def shortestSubarray(self, nums: List[int], target_sum: int) -> int:
+        n = len(nums)
+
+        # Size is n+1 to handle subarrays starting from index 0
+        prefix_sums = [0] * (n + 1)
+
+        # Calculate prefix sums
+        for i in range(1, n + 1):
+            prefix_sums[i] = prefix_sums[i - 1] + nums[i - 1]
+
+        candidate_indices = deque()
+
+        shortest_subarray_length = float("inf")
+
+        for i in range(n + 1):
+            # Remove candidates from front of deque where subarray sum meets target
+            while (
+                candidate_indices
+                and prefix_sums[i] - prefix_sums[candidate_indices[0]]
+                >= target_sum
+            ):
+                # Update shortest subarray length
+                shortest_subarray_length = min(
+                    shortest_subarray_length, i - candidate_indices.popleft()
+                )
+
+            # Maintain monotonicity by removing indices with larger prefix sums
+            while (
+                candidate_indices
+                and prefix_sums[i] <= prefix_sums[candidate_indices[-1]]
+            ):
+                candidate_indices.pop()
+
+            # Add current index to candidates
+            candidate_indices.append(i)
+
+        # Return -1 if no valid subarray found
+        return (
+            shortest_subarray_length
+            if shortest_subarray_length != float("inf")
+            else -1
+        )
+
+Complexity Analysis
+Let n be the length of the nums array.
+
+Time complexity: O(n)
+
+The algorithm first calculates prefix sums in O(n) time. Then, it processes each index exactly once in the main loop. Within this loop, each index can be added to the deque once and removed at most once from either end of the deque. Since deque operations take O(1) time, the amortized time complexity for all deque operations is O(n).
+
+Thus, the overall time complexity is O(n).
+
+Space complexity: O(n)
+
+The algorithm uses additional space for two main data structures. First, the prefix sums array requires O(n+1) space to store cumulative sums. Second, the deque of candidate indices, in the worst case, might need to store O(n) indices.
+
+Thus, the space complexity of the algorithm is O(n+1)+O(n)=O(n).
+
+
 
 class Solution:
     def removeOccurrences(self, s: str, part: str) -> str:
