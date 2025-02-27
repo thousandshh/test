@@ -1,0 +1,112 @@
+873. Length of Longest Fibonacci Subsequence
+Attempted
+Medium
+Topics
+Companies
+A sequence x1, x2, ..., xn is Fibonacci-like if:
+
+n >= 3
+xi + xi+1 == xi+2 for all i + 2 <= n
+Given a strictly increasing array arr of positive integers forming a sequence, return the length of the longest Fibonacci-like subsequence of arr. If one does not exist, return 0.
+
+A subsequence is derived from another sequence arr by deleting any number of elements (including none) from arr, without changing the order of the remaining elements. For example, [3, 5, 8] is a subsequence of [3, 4, 5, 6, 7, 8].
+
+ 
+
+Example 1:
+
+Input: arr = [1,2,3,4,5,6,7,8]
+Output: 5
+Explanation: The longest subsequence that is fibonacci-like: [1,2,3,5,8].
+Example 2:
+
+Input: arr = [1,3,7,11,12,14,18]
+Output: 3
+Explanation: The longest subsequence that is fibonacci-like: [1,11,12], [3,11,14] or [7,11,18].
+
+
+
+
+Approach 2: Dynamic Programming
+Intuition
+In a Fibonacci-like sequence, each number depends on the two numbers that came before it. This suggests that if we know the length of a Fibonacci-like sequence ending with two particular numbers, we can use that information to find longer sequences that might include these numbers. This aspect of building larger sequences from information collected from smaller ones suggests a dynamic programming approach.
+
+To structure this approach, we define a 2D DP array dp, where dp[i][j] represents the length of the longest Fibonacci-like sequence that ends with arr[i] and arr[j]. The indices i and j correspond to positions in our input array, with j always greater than i to maintain the strictly increasing order of the sequence.
+
+The key idea is to determine whether a sequence ending in arr[i] and arr[j] can be extended. If these are the last two numbers of our sequence, then the number that came before them must be arr[j] - arr[i]. If this difference exists in our array and occurs before arr[i], we can extend a previous sequence to include arr[j].
+
+For example, consider the array [3, 4, 5, 7, 9, 12]. Suppose we are examining 7 and 12 (at positions 3 and 5):
+
+We compute the difference: 12 - 7 = 5.
+We check whether 5 exists in the array and find it at position 2. Since 5 appears before 7, it can be part of a valid sequence.
+This means we can extend an existing sequence that ended with [5, 7] by adding 12.
+The length of the sequence ending with [7, 12] will then be one more than the length of the sequence ending with [5, 7], which we have already stored in our dp array.
+
+To efficiently check for the existence of arr[j] - arr[i] in our array, we use a hash map valToIdx, which maps each value to its index. This allows quick lookups instead of searching the array repeatedly.
+
+Now, to populate the dp array, we iterate over all pairs of indices (prev, curr) where curr > prev. We compute the difference arr[curr] - arr[prev] and check if it exists in the array. If it does, we extend the previously computed sequence; otherwise, we initialize a new sequence of length 2.
+
+As we build dp, we maintain a variable maxLen to track the longest sequence found. Once we process all pairs, maxLen holds the length of the longest Fibonacci-like subsequence. If no valid sequence of at least three elements exists, we return 0.
+
+For a more comprehensive understanding of hash tables, check out the Hash Table Explore Card. This resource provides an in-depth look at hash tables, explaining their key concepts and applications with a variety of problems to solidify understanding of the pattern.
+
+Algorithm
+Initialize:
+a variable maxLen to 0 to track the length of the longest Fibonacci-like subsequence.
+a 2D array dp of size arr.length × arr.length where dp[prev][curr] stores the length of the Fibonacci sequence ending at indexes prev and curr.
+Initialize a hash map valToIdx to map each value in the array to its index.
+For each current position curr in the array:
+Add the mapping of the current value to its index in the valToIdx map.
+For each previous position prev less than curr:
+Calculate the difference diff between the current and previous values.
+Look up the index prevIdx of diff in the valToIdx map (-1 if not found).
+If diff is less than the previous value (ensuring strictly increasing sequence) and prevIdx exists:
+Update dp[prev][curr] by adding 1 to the length of the sequence ending at [prevIdx][prev].
+Otherwise:
+Set dp[prev][curr] to 2 (representing just the two numbers).
+Update maxLen if the current sequence length is greater.
+Return maxLen if it's greater than 2, otherwise return 0 (as sequences of length 2 are not valid).
+
+
+class Solution:
+    def lenLongestFibSubseq(self, arr: list[int]) -> int:
+        n = len(arr)
+        max_len = 0
+        # dp[prev][curr] stores length of Fibonacci sequence ending at indexes prev,curr
+        dp = [[0] * n for _ in range(n)]
+
+        # Map each value to its index for O(1) lookup
+        val_to_idx = {num: idx for idx, num in enumerate(arr)}
+
+        # Fill dp array
+        for curr in range(n):
+            for prev in range(curr):
+                # Find if there exists a previous number to form Fibonacci sequence
+                diff = arr[curr] - arr[prev]
+                prev_idx = val_to_idx.get(diff, -1)
+
+                # Update dp if valid Fibonacci sequence possible
+                # diff < arr[prev] ensures strictly increasing sequence
+                dp[prev][curr] = (
+                    dp[prev_idx][prev] + 1
+                    if diff < arr[prev] and prev_idx >= 0
+                    else 2
+                )
+                max_len = max(max_len, dp[prev][curr])
+
+        # Return 0 if no sequence of length > 2 found
+        return max_len if max_len > 2 else 0
+
+
+
+Complexity Analysis
+Let n be the length of the input array arr.
+
+Time complexity: O(n^2)
+
+The algorithm uses two nested loops - the outer loop runs for all positions curr from 0 to n−1, and for each curr, the inner loop runs for all prev from 0 to curr-1. This results in O(n^2) iterations. Inside these loops, all operations (hash map lookups, array accesses, and comparisons) take O(1) time. Therefore, the total time complexity is O(n^2).
+
+Space complexity: O(n^2)
+
+The algorithm uses a 2D array dp of size n×n to store the lengths of Fibonacci sequences ending at different pairs of indices, requiring O(n^2) space. Additionally, it uses a hash map valToIdx to store the index for each value in the array, which requires O(n) space. The total space complexity is dominated by the dp array, resulting in O(n^2) space complexity.
+
