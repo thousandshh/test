@@ -1,0 +1,863 @@
+**Question 1**
+1718. Construct the Lexicographically Largest Valid Sequence
+Solved
+Medium
+Topics
+Companies
+Hint
+Given an integer n, find a sequence with elements in the range [1, n] that satisfies all of the following:
+
+The integer 1 occurs once in the sequence.
+Each integer between 2 and n occurs twice in the sequence.
+For every integer i between 2 and n, the distance between the two occurrences of i is exactly i.
+The distance between two numbers on the sequence, a[i] and a[j], is the absolute difference of their indices, |j - i|.
+
+Return the lexicographically largest sequence. It is guaranteed that under the given constraints, there is always a solution.
+
+A sequence a is lexicographically larger than a sequence b (of the same length) if in the first position where a and b differ, sequence a has a number greater than the corresponding number in b. For example, [0,1,9,0] is lexicographically larger than [0,1,5,6] because the first position they differ is at the third number, and 9 is greater than 5.
+
+ 
+
+Example 1:
+
+Input: n = 3
+Output: [3,1,2,3,2]
+Explanation: [2,3,2,1,3] is also a valid sequence, but [3,1,2,3,2] is the lexicographically largest valid sequence.
+Example 2:
+
+Input: n = 5
+Output: [5,3,1,4,3,5,2,4,2]
+ 
+
+Constraints:
+
+1 <= n <= 20
+
+
+
+
+Overview
+Given an integer n, we need to find the lexicographically largest sequence that satisfies all of these conditions:
+
+The integer 1 occurs once in the sequence.
+All other integers from 2 to n occur exactly twice, and the distance between these occurrences is equal to the value of this integer.
+The distance between two integers is defined as the difference in the indices of both the integers. For example: in the array nums = [1,2,3,1,2], the distance between both occurences of 1 is given by 3.
+
+A sequence a is lexicographically larger than a sequence b (of the same length) if in the first position where a and b differ, sequence a has a number greater than the corresponding number in b. For example, [0,1,9,0] is lexicographically larger than [0,1,5,6] because the first position they differ is at the third number, and 9 is greater than 5.
+
+Approach: Backtracking
+Intuition
+Observe the lexicographically largest sequences for smaller values of n:
+
+For n = 1: [1]
+For n = 2: [2, 1, 2]
+For n = 3: [3, 1, 2, 3, 2]
+For n = 4: [4, 2, 3, 2, 4, 3, 1]
+Identifying an intuitive pattern for these sequences is challenging. Given that n lies in the range 1 <= n <= 20, we can generate all possible valid sequences and find the lexicographically largest among them using backtracking. We'll use a recursive boolean function to determine whether the current sequence is valid. If it's not, we can terminate the recursive process early.
+
+Let's represent the recursive function as bool findLargestSequence(currentIndex, resultSequence, isNumberUsed, targetNumber), where we start with an empty sequence resultSequence and assign values from 1 to n one by one at the currentIndex. However, since we want to find the lexicographically maximum sequence, we can start assigning the values from n to 1, in decreasing order. This would help us assign greater values at the beginning of the list. Therefore, the first valid list created would be the lexicographically greatest one.
+
+The base case occurs when currentIndex reaches the end of the sequence, signaling that a valid solution has been constructed. We return true and save the current sequence as the answer.
+
+We will try to place all the values from n to 1 at the currentIndex. If the value to be assigned, numberToPlace, is not 1, we must assign this value at an index located numberToPlace positions away to create a valid sequence. If that position, given by numberToPlace + currentIndex, already contains a value, the current sequence is invalid, and we cannot assign the current value to this index. So we move to the next possible value for numberToPlace and check if it can be assigned to the current index. For numberToPlace = 1, we can proceed directly to the next index.
+
+After assigning numberToPlace, we recursively attempt to fill subsequent positions by passing the modified sequence and incrementing the currentIndex in the recursive state. However, backtracking requires that we undo the assignments at both currentIndex and currentIndex + numberToPlace to explore other valid sequences. So we unassign the values at both these indices and repeat the process for other values of numberToPlace.
+
+Algorithm
+Recursive Helper Function findLexicographicallyLargestSequence(currentIndex, resultSequence, isNumberUsed, targetNumber):
+
+If currentIndex equals the size of resultSequence, return true as the sequence is fully constructed.
+If resultSequence[currentIndex] is not zero, recursively call the function for currentIndex + 1.
+Loop through numbers from targetNumber down to 1 to ensure a lexicographically largest result.
+If isNumberUsed[numberToPlace] == true, continue to the next number.
+Mark the number as used by setting isNumberUsed[numberToPlace] = true.
+Place numberToPlace at currentIndex in resultSequence.
+If numberToPlace == 1, directly move to the next index and recursively call the function. If the recursion returns true, return true.
+For larger numbers, check if currentIndex + numberToPlace is a valid index and that position is empty. If valid:
+Place numberToPlace at currentIndex + numberToPlace.
+Recursively call the function and return true if the recursion succeeds.
+Undo the placement at currentIndex + numberToPlace for backtracking.
+Undo the current placement and mark numberToPlace as unused.
+Return false if no valid placement is found.
+Main Function:
+
+Initialize resultSequence as a vector of size 2 * targetNumber - 1, filled with zeros, to store the final sequence.
+Create a boolean vector isNumberUsed of size targetNumber + 1, initialized to false, to track the numbers already placed in the sequence.
+Call the recursive helper function findLexicographicallyLargestSequence(0, resultSequence, isNumberUsed, targetNumber) to construct the sequence.
+
+
+
+class Solution:
+    def constructDistancedSequence(self, target_number: int) -> List[int]:
+        # Initialize the result sequence with size 2*n - 1 filled with 0s
+        result_sequence = [0] * (target_number * 2 - 1)
+
+        # Keep track of which numbers are already placed in the sequence
+        is_number_used = [False] * (target_number + 1)
+
+        # Start recursive backtracking to construct the sequence
+        self.find_lexicographically_largest_sequence(
+            0, result_sequence, is_number_used, target_number
+        )
+
+        return result_sequence
+
+    # Recursive function to generate the desired sequence
+    def find_lexicographically_largest_sequence(
+        self, current_index, result_sequence, is_number_used, target_number
+    ):
+        # If we have filled all positions, return true indicating success
+        if current_index == len(result_sequence):
+            return True
+
+        # If the current position is already filled, move to the next index
+        if result_sequence[current_index] != 0:
+            return self.find_lexicographically_largest_sequence(
+                current_index + 1,
+                result_sequence,
+                is_number_used,
+                target_number,
+            )
+
+        # Attempt to place numbers from targetNumber to 1 for a
+        # lexicographically largest result
+        for number_to_place in range(target_number, 0, -1):
+            if is_number_used[number_to_place]:
+                continue
+
+            is_number_used[number_to_place] = True
+            result_sequence[current_index] = number_to_place
+
+            # If placing number 1, move to the next index directly
+            if number_to_place == 1:
+                if self.find_lexicographically_largest_sequence(
+                    current_index + 1,
+                    result_sequence,
+                    is_number_used,
+                    target_number,
+                ):
+                    return True
+            # Place larger numbers at two positions if valid
+            elif (
+                current_index + number_to_place < len(result_sequence)
+                and result_sequence[current_index + number_to_place] == 0
+            ):
+                result_sequence[current_index + number_to_place] = (
+                    number_to_place
+                )
+
+                if self.find_lexicographically_largest_sequence(
+                    current_index + 1,
+                    result_sequence,
+                    is_number_used,
+                    target_number,
+                ):
+                    return True
+
+                # Undo the placement for backtracking
+                result_sequence[current_index + number_to_place] = 0
+
+            # Undo current placement and mark the number as unused
+            result_sequence[current_index] = 0
+            is_number_used[number_to_place] = False
+
+        return False
+
+Complexity Analysis
+Let n be the target number.
+
+Time Complexity: O(n!)
+
+The recursive function generates permutations by exploring all possible ways to arrange a set of numbers. For a given target number n, the function places each number from n down to 1 at every valid index in the sequence. Since there are n possible choices for the first number, n-1 choices for the second, and so on, the total number of possible arrangements is the factorial of n, denoted as O(n!). This is because each recursive call explores a new possibility by reducing the problem size by 1 until all positions are filled, creating a tree-like structure with n! leaves at the deepest level.
+
+However, while the theoretical time complexity is O(n!), the actual runtime is often much lower in practice. This is due to early pruning of invalid states during the backtracking process. The algorithm can stop as soon as it finds the lexicographically largest valid permutation or an invalid permutation, avoiding further exploration of unnecessary branches. This reduces the number of recursive calls significantly, as many permutations are discarded without fully exploring their subtrees.
+
+Space Complexity: O(n)
+
+The recursion depth is bounded by n due to backtracking. Additional space is required for the resultSequence and isNumberUsed lists, both of size O(n). Therefore, the total space complexity is given by O(n).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Question 2**
+465. Optimal Account Balancing
+Hard
+Topics
+Companies
+You are given an array of transactions transactions where transactions[i] = [fromi, toi, amounti] indicates that the person with ID = fromi gave amounti $ to the person with ID = toi.
+
+Return the minimum number of transactions required to settle the debt.
+
+ 
+
+Example 1:
+
+Input: transactions = [[0,1,10],[2,0,5]]
+Output: 2
+Explanation:
+Person #0 gave person #1 $10.
+Person #2 gave person #0 $5.
+Two transactions are needed. One way to settle the debt is person #1 pays person #0 and #2 $5 each.
+Example 2:
+
+Input: transactions = [[0,1,10],[1,0,1],[1,2,5],[2,0,5]]
+Output: 1
+Explanation:
+Person #0 gave person #1 $10.
+Person #1 gave person #0 $1.
+Person #1 gave person #2 $5.
+Person #2 gave person #0 $5.
+Therefore, person #1 only need to give person #0 $4, and all debt is settled.
+ 
+
+Constraints:
+
+1 <= transactions.length <= 8
+transactions[i].length == 3
+0 <= fromi, toi < 12
+fromi != toi
+1 <= amounti <= 100
+
+
+
+
+Approach 2: Dynamic Programming
+Intuition
+If you are not familiar with dynamic programming, please refer to our explore cards Dynamic Programming Explore Card. We will focus on the usage in this article and not the implementation details.
+
+In the earlier section on intuition, we discussed that for a group of n persons with a total balance of 0, only n - 1 transfers are needed to settle all debts. Therefore, this problem can be transformed into the question of how many subgroups the balance list can be divided into such that the sum of balances in each subgroup is 0.
+
+As shown in the example below, the group of 4 requires 3 transactions. However, if we divide it into two subgroups of 0 balance, then we only need 1 transaction to settle each subgroup, resulting in a total of 2 transactions needed.
+
+img
+
+In general, if we can divide n persons into m groups whose balance sum is 0, then it only takes n−m transactions. Each group we create saves us one transaction.
+
+Our initial step involves storing the non-zero net balance of each person in a list.
+
+img
+
+To save time and space, we use a binary number to indicate which people are in the group, with the lowest bit set to 1 to denote that the 0 
+th
+  person is in the group, and so on. This method is often referred to as bitmask.
+
+img
+
+We get the optimal solution to the original problem by recursively searching for the optimal solutions to subproblems.
+
+img
+
+We remove one person from the current group at a time and recursively find the optimal solution for that subgroup. Taking the figure as an example, the current problem is the group that contains all four persons, represented by the binary number 1111. Hence, we need to traverse four subgroups (0111, 1011, 1101, 1110) and find the optimal solution for each of these subproblems.
+
+img
+
+Once we obtain the optimal solution to the subproblems, an important step is still missing: if the total balance of the current group is zero, it means that the sum of each subproblem is not zero (since each subproblem is obtained by removing a non-zero balance from the current problem). Therefore, the non-zero part of the subproblem, plus the balance of the additional person in the current problem, make up an additional group whose sum is zero. Thus, the optimal solution to the current problem is the maximum optional solution to its subproblems plus 1. However, if the total balance of the current group is not zero, this property does not hold.
+
+img
+
+Therefore, as shown in the example below, if the current problem 1111 = (3, -3, 1, -1) has a total balance of 0, thus dfs(1111) is one more than the maximum result from its subproblems dfs(1110), dfs(1101), dfs(1011), and dfs(0111).
+
+img
+
+The maximum result of its subproblems is 1, thus dfs(1111) is equal to 1 + 1.
+
+Additionally, we use memoization to store the maximum value obtained by each bitmask. This helps us avoid re-solving the same subproblems multiple times and significantly reduces the time complexity of the algorithm.
+
+
+Algorithm
+Create an array memo of length 2 
+n
+ , with all values initialized to -1, as memory.
+
+Collect all non-zero net balances in the array balance_list.
+
+Define a recursive function dfs(total_mask) to divide total_mask into the largest possible number of subgroups whose sum is 0.
+
+If memo[total_mask] is not equal to -1, return memo[total_mask].
+For each bit cur_mask in total_mask that is 1, remove this bit and recursively call dfs(total_mask ^ cur_mask). Keep track of answer, the maximum result from these subproblems.
+If the sum of balances of total_mask is zero, return answer + 1. Otherwise, return answer.
+Return n - dfs((1 << n) - 1).
+
+
+class Solution:
+    def minTransfers(self, transactions: List[List[int]]) -> int:
+        balance_map = collections.defaultdict(int)
+        for a, b, amount in transactions:
+            balance_map[a] += amount
+            balance_map[b] -= amount
+        
+        balance_list = [amount for amount in balance_map.values() if amount]
+        n = len(balance_list)
+        
+        memo = [-1] * (1 << n)
+        memo[0] = 0
+        
+        def dfs(total_mask):
+            if memo[total_mask] != -1:
+                return memo[total_mask]
+            balance_sum, answer = 0, 0
+
+            # Remove one person at a time in total_mask
+            for i in range(n):
+                cur_bit = 1 << i
+                if total_mask & cur_bit:
+                    balance_sum += balance_list[i]
+                    answer = max(answer, dfs(total_mask ^ cur_bit))
+
+            # If the total balance of total_mask is 0, increment answer by 1.
+            memo[total_mask] = answer + (balance_sum == 0)
+            return memo[total_mask]
+        
+        return n - dfs((1 << n) - 1)
+
+
+
+Complexity Analysis
+Let n be the length of transactions.
+
+Time complexity: O(n⋅2 
+n
+ )
+
+We build memo, an array of size O(2 
+n
+ ) as memory, equal to the number of possible states. Each state is computed with a traverse through balance_list, which takes O(n) time.
+Space complexity: O(2 
+n
+ )
+
+The length of memo is 2 
+n
+ .
+The space complexity of a recursive call depends on the maximum depth of the recursive call stack, which is n. As each recursive call removes one set bit from total_mask. Therefore, at most O(n) levels of recursion will be created, and each level consumes a constant amount of space.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Question 3**
+1593. Split a String Into the Max Number of Unique Substrings
+Medium
+Topics
+Companies
+Hint
+Given a string s, return the maximum number of unique substrings that the given string can be split into.
+
+You can split string s into any list of non-empty substrings, where the concatenation of the substrings forms the original string. However, you must split the substrings such that all of them are unique.
+
+A substring is a contiguous sequence of characters within a string.
+
+ 
+
+Example 1:
+
+Input: s = "ababccc"
+Output: 5
+Explanation: One way to split maximally is ['a', 'b', 'ab', 'c', 'cc']. Splitting like ['a', 'b', 'a', 'b', 'c', 'cc'] is not valid as you have 'a' and 'b' multiple times.
+Example 2:
+
+Input: s = "aba"
+Output: 2
+Explanation: One way to split maximally is ['a', 'ba'].
+Example 3:
+
+Input: s = "aa"
+Output: 1
+Explanation: It is impossible to split the string any further.
+ 
+
+Constraints:
+
+1 <= s.length <= 16
+
+s contains only lower case English letters.
+
+
+
+
+
+Overview
+There are many patterns that can be recognized when solving data structures and algorithms (DSA) questions. Identifying these patterns by reading can help you solve problems more efficiently within your limited time. Over time and with practice, people start recognizing these patterns.
+
+So this time before diving into the answer, let’s understand a few general patterns that you can use in your future journey:
+
+Sorted Input:
+
+Apply binary search for efficient element lookup.
+Use the two-pointer technique for problems involving pairs or segments.
+Unsorted Input:
+
+Apply dynamic programming for questions related to counting ways or optimizing values.
+Use backtracking for problems that ask for all possibilities or combinations (this is also a suitable fallback if dynamic programming isn’t going to work).
+Use a Trie for prefix matching and string-building scenarios.
+Use a hash map or set to find specific elements quickly.
+Implement a monotonic stack or sliding window technique for managing elements while continuously finding maximum or minimum values.
+Input is a Graph or Tree:
+
+Use DFS to explore all paths or when the question does not require finding the shortest path.
+Use BFS when the question asks for the shortest path or fewest steps.
+For binary trees, use DFS if the problem involves exploring specific depths or levels.
+Linked List Input:
+
+Use techniques involving slow and fast pointers or "prev" and "dummy" pointers to facilitate certain operations if you are unsure how to achieve a specific outcome.
+Note: There's so much more to this pattern! We just wanted to give you a glimpse of what pattern recognition boils down to in its simplest form. Feel free to add your own flair and create a detailed chart!
+
+gist
+
+
+In the context of this problem, many of you might initially assume that a DP approach would yield the correct solution, but it doesn’t work well here.
+
+Suppose we’re currently examining the substring starting at start (our current index). Our goal is to split the remaining substring from start to s.size() - 1 into smaller substrings such that:
+
+Each substring is non-empty.
+Each substring is unique, meaning it doesn’t match any substring we’ve already taken.
+To solve this, we:
+
+Consider each possible substring starting from start, such as s[start:start+1], s[start:start+2], and so on, up to s[start:s.size()].
+Attempt to add each of these substrings to our seen set and then recursively continue with the remaining characters.
+Only proceed if the substring, let’s call it substring, does not already exist in seen.
+This is where we run into a limitation with DP: finding whether substring exists in the set of substrings from 0 to start-1 is challenging. There are numerous ways to partition those characters into unique substrings, and the results vary depending on how those partitions are made. This makes the DP approach ineffective here, as the uniqueness constraint depends on the precise configuration of substrings.
+
+Looking at the constraints, we can see that DFS combined with backtracking tends to have exponential complexity.
+
+Specifically when the constraints are like this 1<n≤16. The expected time complexity likely involves O(2 
+n
+ ). Any higher base, such as 20 or a factorial, will be too slow (for instance, 3 
+20
+ ≈3.5 billion, and 20! is significantly larger). An O(2 
+n
+ ) complexity usually implies that, given a collection of elements, you are considering all subsets or subsequences—meaning for each element, you have two choices: either take it or leave it.
+
+Since this bound is quite small, most algorithms will be efficient enough. Therefore, consider backtracking and recursion in these types of cases.
+
+Approach 1: Backtracking
+Intuition
+We start at the beginning of the string and generate substrings one by one. Each substring is checked against a set of previously seen substrings to ensure it is unique.
+
+We initialize a set called seen to track the substrings we have already included in our current split. Then we can begin by checking if we have reached the end of the string. If we have, we return 0, indicating that no further substrings can be added.
+
+Next to hold the maximum number of unique substrings we can form we will set a variable maxCount to zero. We then enter a loop, generating substrings by extending the endpoint from the current starting position. For each possible endpoint, we extract a substring and check if it is in the seen set.
+
+If the substring is not present in the set, we add it to the seen set. We then make a recursive call, moving the starting point to the end of the current substring, to explore further splits from this new position. After the recursive call, we remove the substring from the seen set to backtrack and explore other potential substrings.
+
+By the end of the loop, we return the highest count of unique substrings we found during the exploration.
+
+Algorithm
+Initialize an empty unordered set seen to track unique substrings encountered.
+
+Call the backtrack function starting from index 0 with the empty seen set.
+
+In the backtrack function:
+
+If start equals the size of the string s, return 0 (base case: no more substrings to add).
+
+Initialize maxCount to 0 to track the maximum number of unique substrings.
+
+Use a loop to iterate over all possible substrings starting from index start:
+
+For each end from start + 1 to the size of s, extract the substring s.substr(start, end - start).
+If the substring is unique (i.e., not found in seen):
+Insert the substring into the seen set.
+Recursively call backtrack for the next position (end) and update maxCount with the maximum of its current value and 1 + backtrack(s, end, seen) (including the current substring).
+Backtrack by removing the substring from the seen set to explore other possibilities.
+After evaluating all substrings, return maxCount.
+
+
+
+class Solution:
+    def maxUniqueSplit(self, s: str) -> int:
+        seen = set()
+        return self.backtrack(s, 0, seen)
+
+    def backtrack(self, s, start, seen):
+        if start == len(s):
+            return 0
+
+        max_count = 0
+
+        for end in range(start + 1, len(s) + 1):
+            sub_string = s[start:end]
+            if sub_string not in seen:
+                seen.add(sub_string)
+                max_count = max(max_count, 1 + self.backtrack(s, end, seen))
+                seen.remove(sub_string)
+
+        return max_count
+
+
+Complexity Analysis
+Let n be the size of the string s.
+
+Time Complexity: O(n 
+2
+ ⋅2 
+n
+ )
+
+The function recursively explores all possible substrings of the input string. For each starting index start, it iterates over every possible end index end, which can be up to n, creating a nested loop structure that takes O(n 
+2
+ ) per recursive depth due to the substring creation operation.
+
+Specifically, the substring operation s[start:end] takes O(k) time where k is the length of the substring. Over all recursive calls, this results in O(n 
+2
+ ) for each split due to the cumulative cost of substring operations at each level.
+
+In the worst case, there are 2 
+n
+  possible ways to partition the string, as each character can either start a new substring or continue the previous one, forming an exponential number of combinations. Thus, the recursion branches exponentially, contributing an additional O(2 
+n
+ ) factor.
+
+Combining these, we get a total time complexity of O(n 
+2
+ ⋅2 
+n
+ ). The O(n 
+2
+ ) factor accounts for the cost of generating substrings within each partition, and the O(2 
+n
+ ) factor represents the exponential number of partitioning combinations.
+
+Space complexity: O(n)
+
+The maximum depth of the recursion can go up to n (in the worst case, where we split every single character into its own substring). Therefore, the call stack contributes O(n).
+
+The unordered set seen can store at most n unique substrings. In the worst case, this could also be O(n), though in practice, the number of unique substrings is likely less than n due to repetitions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Question 4**
+494. Target Sum
+Medium
+Topics
+Companies
+You are given an integer array nums and an integer target.
+
+You want to build an expression out of nums by adding one of the symbols '+' and '-' before each integer in nums and then concatenate all the integers.
+
+For example, if nums = [2, 1], you can add a '+' before 2 and a '-' before 1 and concatenate them to build the expression "+2-1".
+Return the number of different expressions that you can build, which evaluates to target.
+
+ 
+
+Example 1:
+
+Input: nums = [1,1,1,1,1], target = 3
+Output: 5
+Explanation: There are 5 ways to assign symbols to make the sum of nums be target 3.
+-1 + 1 + 1 + 1 + 1 = 3
++1 - 1 + 1 + 1 + 1 = 3
++1 + 1 - 1 + 1 + 1 = 3
++1 + 1 + 1 - 1 + 1 = 3
++1 + 1 + 1 + 1 - 1 = 3
+Example 2:
+
+Input: nums = [1], target = 1
+Output: 1
+ 
+
+Constraints:
+
+1 <= nums.length <= 20
+0 <= nums[i] <= 1000
+0 <= sum(nums[i]) <= 1000
+-1000 <= target <= 1000
+
+
+Approach 3: 2D Dynamic Programming
+Intuition
+Dynamic programming (DP) is a technique that solves problems by breaking them down into simpler subproblems and solving each subproblem only once. We create a 2D DP table where dp[index][sum] represents the number of ways to reach the sum sum using the first index numbers.
+
+Suppose we have the list nums = [1, 1, 1, 1, 1] and the target target = 3.
+
+We initialize the first row of the DP table. For the first number, there is exactly one way to reach the sum equal to the number itself (either by adding or subtracting it). In our example, we initialize dp[0][1 + totalSum] = 1 and dp[0][-1 + totalSum] = 1.
+
+For each subsequent number, we update the DP table based on the previous row. For each possible sum, we add the number of ways to reach that sum by either adding or subtracting the current number. For example, if we are at the second number 1, we update the DP table based on the first row:
+
+If the previous sum was 0 (i.e., dp[0][0 + totalSum] = 1), we can reach a sum of 1 by adding the current number (1 + 1 = 2) or a sum of -1 by subtracting the current number (1 - 1 = 0).
+We continue this process for each number in the list. The value at dp[nums.length - 1][target + totalSum] gives the number of ways to reach the target sum using all numbers. This approach efficiently computes the number of valid expressions by leveraging the results of previously solved subproblems.
+
+The animation below shows how various sums are generated, along with the corresponding indices. The example assumes that the sum values lie in the range of -6 to +6, just for the purpose of illustration.
+
+Current
+
+For a more comprehensive understanding of dynamic programming, check out the Dynamic Programming Explore Card 🔗. This resource provides an in-depth look at dynamic programming, explaining its key concepts and applications with a variety of problems to solidify understanding of the pattern.
+
+Algorithm
+Compute totalSum as the sum of all elements in the nums array.
+
+Initialize a 2D dp array with dimensions [nums.length][2 * totalSum + 1] to represent possible sums shifted by totalSum (to handle negative indices).
+
+Set up the base case for the first row of the DP table:
+
+Add 1 to dp[0][nums[0] + totalSum] to account for adding the first number.
+Add 1 to dp[0][-nums[0] + totalSum] to account for subtracting the first number (handle duplicate cases).
+Iterate through the remaining numbers in the nums array:
+
+For each possible sum sum in the range -totalSum to totalSum:
+If dp[index - 1][sum + totalSum] > 0 (i.e., the sum is achievable from previous numbers):
+Add its value to dp[index][sum + nums[index] + totalSum] (sum achieved by adding the current number).
+Add its value to dp[index][sum - nums[index] + totalSum] (sum achieved by subtracting the current number).
+Check if the absolute value of the target exceeds totalSum:
+
+If yes, return 0 (the target is unachievable).
+Otherwise, return dp[nums.length - 1][target + totalSum], which contains the number of ways to achieve the target.
+Implementation
+Like in the previous approach, we shift the range of possible sums by adding totalSum to both the lower and upper bounds, in order to avoid negative indices.
+
+
+
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        total_sum = sum(nums)
+        dp = [[0] * (2 * total_sum + 1) for _ in range(len(nums))]
+
+        # Initialize the first row of the DP table
+        dp[0][nums[0] + total_sum] = 1
+        dp[0][-nums[0] + total_sum] += 1
+
+        # Fill the DP table
+        for index in range(1, len(nums)):
+            for sum_val in range(-total_sum, total_sum + 1):
+                if dp[index - 1][sum_val + total_sum] > 0:
+                    dp[index][sum_val + nums[index] + total_sum] += dp[
+                        index - 1
+                    ][sum_val + total_sum]
+                    dp[index][sum_val - nums[index] + total_sum] += dp[
+                        index - 1
+                    ][sum_val + total_sum]
+
+        # Return the result if the target is within the valid range
+        return (
+            0
+            if abs(target) > total_sum
+            else dp[len(nums) - 1][target + total_sum]
+        )
+
+
+
+
+Complexity Analysis
+Let n be the size of the input array nums.
+
+Time complexity: O(n⋅totalSum)
+
+The time complexity is determined by the nested loops in the function. The outer loop runs n times (once for each element in nums), and the inner loop runs 2⋅totalSum+1 times (once for each possible sum from −totalSum to totalSum).
+
+Therefore, the overall time complexity is O(n⋅totalSum).
+
+Space complexity: O(n⋅totalSum)
+
+The space complexity is determined by the size of the DP table dp, which is a 2D array of size n×(2⋅totalSum+1). Each entry in the DP table requires constant space, so the total space complexity is O(n⋅totalSum).
+
+Additionally, the space complexity includes the space required for the input array nums, which is O(n). However, since O(n⋅totalSum) dominates O(n), the overall space complexity is O(n⋅totalSum).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Question 5**
+773. Sliding Puzzle
+Hard
+Topics
+Companies
+Hint
+On an 2 x 3 board, there are five tiles labeled from 1 to 5, and an empty square represented by 0. A move consists of choosing 0 and a 4-directionally adjacent number and swapping it.
+
+The state of the board is solved if and only if the board is [[1,2,3],[4,5,0]].
+
+Given the puzzle board board, return the least number of moves required so that the state of the board is solved. If it is impossible for the state of the board to be solved, return -1.
+
+ 
+
+Example 1:
+
+
+Input: board = [[1,2,3],[4,0,5]]
+Output: 1
+Explanation: Swap the 0 and the 5 in one move.
+Example 2:
+
+
+Input: board = [[1,2,3],[5,4,0]]
+Output: -1
+Explanation: No number of moves will make the board solved.
+Example 3:
+
+
+Input: board = [[4,1,2],[5,0,3]]
+Output: 5
+Explanation: 5 is the smallest number of moves that solves the board.
+An example path:
+After move 0: [[4,1,2],[5,0,3]]
+After move 1: [[4,1,2],[0,5,3]]
+After move 2: [[0,1,2],[4,5,3]]
+After move 3: [[1,0,2],[4,5,3]]
+After move 4: [[1,2,0],[4,5,3]]
+After move 5: [[1,2,3],[4,5,0]]
+
+
+Constraints:
+
+board.length == 2
+board[i].length == 3
+0 <= board[i][j] <= 5
+Each value board[i][j] is unique.
+
+
+
+
+Approach 2: Breadth-First Search (BFS)
+Intuition
+The DFS approach explores all possible board states before reaching the final state, which can be inefficient. Although we might find the solution early, DFS will still continue to explore all paths, potentially with non-optimal move counts. To address this, we switch to Breadth-First Search (BFS). BFS is better suited in scenarios like this because it explores all states at the current move level before going deeper, ensuring that the first time it reaches the goal, it has found the shortest path.
+
+Our setup remains similar: we convert the board to a 1-D string and use a set to track visited states. A queue will handle the BFS traversal, starting from the initial state. The queue’s structure works well to support BFS’s layered exploration, since each level is processed sequentially and we stop as soon as we reach the goal.
+
+We then loop while the queue is not empty, processing all states at the current move count. If we encounter the final state, we return the current move count as the answer. Otherwise, we explore all possible moves from the current state, modify the board accordingly, and, if unvisited, add the new state to the queue for further exploration.
+
+Algorithm
+Define an array directions to map the possible moves for the empty tile (0) at each position.
+Initialize a string:
+target to "123450", representing the goal state of the board.
+startState to store the initial configuration of the board in string form.
+Iterate through each row and column of board:
+Append each tile value to startState to create a single string representing the initial board state.
+Initialize:
+a set visited to store all the board states already processed to prevent redundant calculations.
+a queue for the Breadth-First Search (BFS) traversal.
+an integer moves to 0, which will track the number of moves taken to reach the goal state.
+Add startState to visited to mark it as processed.
+Start a while loop that continues as long as queue is not empty:
+Store the current size of queue in size. For each item in the current level:
+Remove the front element of queue and assign it to currentState.
+Check if currentState matches target. If it does, return moves as the minimum moves required to reach the solved state.
+Set zeroPos to the position of zero in currentState.
+For each valid new position newPos in directions[zeroPos]:
+Generate nextState by swapping zeroPos and newPos.
+If nextState is already in visited, skip it to avoid redundant processing.
+Otherwise, add nextState to both visited and queue.
+Increment moves to continue to the next level of BFS.
+If queue becomes empty without reaching the target, return -1, indicating the puzzle is unsolvable.
+
+
+
+class Solution:
+    def slidingPuzzle(self, board):
+        # Direction map for zero's possible moves in a 1D representation of the 2x3 board
+        directions = [
+            [1, 3],
+            [0, 2, 4],
+            [1, 5],
+            [0, 4],
+            [1, 3, 5],
+            [2, 4],
+        ]
+
+        # Helper method to swap characters at indices i and j in the string
+        def _swap(state, i, j):
+            state_list = list(state)
+            state_list[i], state_list[j] = state_list[j], state_list[i]
+            return "".join(state_list)
+
+        target = "123450"
+        start_state = "".join(str(num) for row in board for num in row)
+
+        visited = set()  # To store visited states
+        queue = deque([start_state])
+        visited.add(start_state)
+
+        moves = 0
+
+        # BFS to find the minimum number of moves
+        while queue:
+            for _ in range(len(queue)):
+                current_state = queue.popleft()
+
+                # Check if we reached the target solved state
+                if current_state == target:
+                    return moves
+
+                zero_pos = current_state.index("0")
+                for new_pos in directions[zero_pos]:
+                    next_state = _swap(current_state, zero_pos, new_pos)
+
+                    # Skip if this state has been visited
+                    if next_state in visited:
+                        continue
+
+                    # Mark the new state as visited and add it to the queue
+                    visited.add(next_state)
+                    queue.append(next_state)
+            moves += 1
+
+        return -1
+
+
+
+Complexity Analysis
+Let m be the number of rows and n be the number of columns of the board.
+
+Time complexity: O((m⋅n)!×(m⋅n))
+
+The algorithm uses Breadth-First Search (BFS) to explore all possible board configurations. With (m⋅n)! unique configurations, BFS may process each configuration once. Each configuration requires checking moves and generating new ones, taking O(m⋅n) operations.
+
+Therefore, the overall time complexity is O((m⋅n)!×(m⋅n)).
+
+Space complexity: O((m⋅n)!)
+
+The space complexity is determined by the visited set and the BFS queue, each of which can hold up to (m⋅n)! unique configurations in the worst case. Therefore, the space complexity is O((m⋅n)!).
+
+
