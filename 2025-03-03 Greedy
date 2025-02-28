@@ -1,0 +1,454 @@
+**Daily Question 1**
+
+55. Jump Game
+
+Solved
+Medium
+Topics
+Companies
+You are given an integer array nums. You are initially positioned at the array's first index, and each element in the array represents your maximum jump length at that position.
+
+Return true if you can reach the last index, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,1,1,4]
+Output: true
+Explanation: Jump 1 step from index 0 to 1, then 3 steps to the last index.
+Example 2:
+
+Input: nums = [3,2,1,0,4]
+Output: false
+Explanation: You will always arrive at index 3 no matter what. Its maximum jump length is 0, which makes it impossible to reach the last index.
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+0 <= nums[i] <= 105
+
+
+Approach 4: Greedy
+Once we have our code in the bottom-up state, we can make one final, important observation. From a given position, when we try to see if we can jump to a GOOD position, we only ever use one - the first one (see the break statement). In other words, the left-most one. If we keep track of this left-most GOOD position as a separate variable, we can avoid searching for it in the array. Not only that, but we can stop using the array altogether.
+
+Iterating right-to-left, for each position we check if there is a potential jump that reaches a GOOD index (currPosition + nums[currPosition] >= leftmostGoodIndex). If we can reach a GOOD index, then our position is itself GOOD. Also, this new GOOD position will be the new leftmost GOOD index. Iteration continues until the beginning of the array. If first position is a GOOD index then we can reach the last index from the first position.
+
+To illustrate this scenario, we will use the diagram below, for input array nums = [9, 4, 2, 1, 0, 2, 0]. We write G for GOOD, B for BAD and U for UNKNOWN. Let's assume we have iterated all the way to position 0 and we need to decide if index 0 is GOOD. Since index 1 was determined to be GOOD, it is enough to jump there and then be sure we can eventually reach index 6. It does not matter that nums[0] is big enough to jump all the way to the last index. All we need is one way.
+
+Index	0	1	2	3	4	5	6
+nums	9	4	2	1	0	2	0
+memo	U	G	B	B	B	G	G
+
+class Solution:
+    def canJump(self, nums: List[int]) -> bool:
+        lastPos = len(nums) - 1
+        for i in range(len(nums) - 1, -1, -1):
+            if i + nums[i] >= lastPos:
+                lastPos = i
+        return lastPos == 0
+
+Complexity Analysis
+
+Time complexity : O(n).
+We are doing a single pass through the nums array, hence n steps, where n is the length of array nums.
+
+Space complexity : O(1).
+We are not using any extra memory.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Daily Question 2**
+
+45. Jump Game II
+Solved
+Medium
+Topics
+Companies
+You are given a 0-indexed array of integers nums of length n. You are initially positioned at nums[0].
+
+Each element nums[i] represents the maximum length of a forward jump from index i. In other words, if you are at nums[i], you can jump to any nums[i + j] where:
+
+0 <= j <= nums[i] and
+i + j < n
+Return the minimum number of jumps to reach nums[n - 1]. The test cases are generated such that you can reach nums[n - 1].
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,1,1,4]
+Output: 2
+Explanation: The minimum number of jumps to reach the last index is 2. Jump 1 step from index 0 to 1, then 3 steps to the last index.
+Example 2:
+
+Input: nums = [2,3,0,1,4]
+Output: 2
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+0 <= nums[i] <= 1000
+It's guaranteed that you can reach nums[n - 1].
+
+
+
+
+Approach 1: Greedy
+Intuition
+Let's say that we're at the i 
+th
+  jump which has a value of 3, so we have 3 possible destinations for this jump, and the value of the destinations are 3, 5, and 2. All the indexes covered by these ranges are the reachable indexes after this jump, as the green cells show in the picture below.
+
+img
+
+If we move on to the jump i + 1, the choices of starting indices for jump i + 1 is exactly the reachable indexes of the jump i.
+
+We can go on and draw the starting range of the jump i + 1 and so on, the starting index of each jump is shown in the following picture. With the increase in the number of jumps, our forward distance is also increasing, the first jump that brings us to the last cell is the jump we should choose. It is a workable method, but what is the time complexity?
+
+img
+
+Since we are guaranteed to reach the last index, the starting range of each jump is always larger than its previous jump (otherwise, we would be stuck at a jump forever). Given the length of nums as n, in the worst case, we may have n jumps and O(n 
+2
+ ) total updates, which is shown by the area of the blue part of the figure below. Considering the maximum size of the input array, an approach with O(n 
+2
+ ) time complexity is likely to end up with Time Limit Exceeded!
+
+img
+
+Let's try an advanced approach to reduce the time complexity. Unlike the previous idea, we don't need to consider all of the updates. Take the first jump at index 0 for example, suppose the starting indexes of jump 0 are in the range [0, 2]. When looking for the starting indexes of the next jump, do we still consider the range [0, 2]? The answer is NO!
+
+We want to reach the ending position by using the least number of jumps possible, so there is no reason in reaching an index using more jumps. Therefore, we shall take a greedy approach that tries to reach each index using the least number of jumps and ignore updates that are destined to end in more jumps.
+
+Now back to the example, even if we can move to [0, 2] in jump 1, we would not consider doing so since we already covered that range with jump 0. So the valid range of reachable indexes for jump 1 is [3, 4] instead of [0, 4].
+
+img
+
+In short, if we can reach an index using j jumps, we will never consider reaching it using more than j jumps. So the updates marked in red will never be considered, because they represent reaching an index with more jumps.
+
+img
+
+We need two auxiliary marks to help delimit ranges and to avoid repeated visits to the same range:
+
+end is the furthest starting index of the current jump.
+
+far is the furthest reachable index of the current jump.
+
+Once we have finished iterating over the range of the current jump (we reach index end), the next step is to continue iterating over the reachable indexes that are larger than end, which is represented by the range [end + 1, far]. We skip the overlapped range (marked in red) using the greedy approach mentioned before.
+
+img
+
+Let's use the following slides as a detailed example:
+
+Current
+
+
+To summarize: the current jump ends when we reach index end. Between the current index and end, we find the farthest reachable index far. At the end of the current jump, we increment our answer and set end = far for the next jump.
+
+Algorithm
+Initialize curEnd = 0, curFar = 0 and the number of jumps as answer = 0.
+
+Interate over nums, for each index i, the farthest index we can reach from i is i + nums[i]. We update curFar = max(curFar, i + nums[i]).
+
+If i = curEnd, it means we have finished the current jump, and should move on to the next jump. Increment answer, and set curEnd = curFar as the furthest we can reach with the next jump. Repeat from step 2.
+
+
+
+class Solution:
+    def jump(self, nums: List[int]) -> int:
+        # The starting range of the first jump is [0, 0]
+        answer, n = 0, len(nums)
+        cur_end, cur_far = 0, 0
+
+        for i in range(n - 1):
+            # Update the farthest reachable index of this jump.
+            cur_far = max(cur_far, i + nums[i])
+
+            # If we finish the starting range of this jump,
+            # Move on to the starting range of the next jump.
+            if i == cur_end:
+                answer += 1
+                cur_end = cur_far
+
+        return answer
+
+
+Complexity Analysis
+Let n be the length of the input array nums.
+
+Time complexity: O(n)
+
+We iterate over nums and stop at the second last element. In each step of the iteration, we make some calculations that take constant time. Therefore, the overall time complexity is O(n).
+
+Space complexity: O(1)
+
+In the iteration, we only need to update three variables, curEnd, curFar and answer, they only take constant space.
+
+
+
+
+
+
+
+
+
+
+**Daily Question 3**
+1526. Minimum Number of Increments on Subarrays to Form a Target Array
+Hard
+Topics
+Companies
+Hint
+You are given an integer array target. You have an integer array initial of the same size as target with all elements initially zeros.
+
+In one operation you can choose any subarray from initial and increment each value by one.
+
+Return the minimum number of operations to form a target array from initial.
+
+The test cases are generated so that the answer fits in a 32-bit integer.
+
+ 
+
+Example 1:
+
+Input: target = [1,2,3,2,1]
+Output: 3
+Explanation: We need at least 3 operations to form the target array from the initial array.
+[0,0,0,0,0] increment 1 from index 0 to 4 (inclusive).
+[1,1,1,1,1] increment 1 from index 1 to 3 (inclusive).
+[1,2,2,2,1] increment 1 at index 2.
+[1,2,3,2,1] target array is formed.
+Example 2:
+
+Input: target = [3,1,1,2]
+Output: 4
+Explanation: [0,0,0,0] -> [1,1,1,1] -> [1,1,1,2] -> [2,1,1,2] -> [3,1,1,2]
+Example 3:
+
+Input: target = [3,1,5,4,2]
+Output: 7
+Explanation: [0,0,0,0,0] -> [1,1,1,1,1] -> [2,1,1,1,1] -> [3,1,1,1,1] -> [3,1,2,2,2] -> [3,1,3,3,2] -> [3,1,4,4,2] -> [3,1,5,4,2].
+
+Intuition
+Similar to the water levels questions or stocks price question, you just add to result whenever the element is larger than the previous element.
+
+This is because when the current element is larger, one needs to add that much for the subarray to reach to target.
+
+Whenever a smaller element shows up, the addition for that subarray is limited only to that amount. Therefore, you only need to add whenever the element is larger than previous element.
+
+Complexity
+Time complexity:
+O(N)
+
+Space complexity:
+O(1)
+
+class Solution:
+    def minNumberOperations(self, target: List[int]) -> int:
+        total = 0
+        target.append(0)
+        for i, num in enumerate(target):
+            if num - target[i - 1] > 0:
+                total += num - target[i - 1]
+        return total
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Daily Question 4**
+179. Largest Number
+Medium
+Topics
+Companies
+Given a list of non-negative integers nums, arrange them such that they form the largest number and return it.
+
+Since the result may be very large, so you need to return a string instead of an integer.
+
+ 
+
+Example 1:
+
+Input: nums = [10,2]
+Output: "210"
+Example 2:
+
+Input: nums = [3,30,34,5,9]
+Output: "9534330"
+ 
+
+Constraints:
+
+1 <= nums.length <= 100
+0 <= nums[i] <= 109
+
+class Solution:
+    def largestNumber(self, nums: List[int]) -> str:
+        # Convert each integer to a string
+        num_strings = [str(num) for num in nums]
+
+        # Sort strings based on concatenated values
+        num_strings.sort(key=lambda a: a * 10, reverse=True)
+
+        # Handle the case where the largest number is zero
+        if num_strings[0] == "0":
+            return "0"
+
+        # Concatenate sorted strings to form the largest number
+        return "".join(num_strings)
+
+class Solution:
+    def largestNumber(self, nums: List[int]) -> str:
+        # Sort the numbers using Quick Sort
+        self._quick_sort(nums, 0, len(nums) - 1)
+        # Concatenate sorted numbers to form the largest number
+        largest_num = "".join(map(str, nums))
+        # Handle the case where the largest number is zero
+        return "0" if largest_num[0] == "0" else largest_num
+
+    def _quick_sort(self, nums: List[int], left: int, right: int) -> None:
+        # Base case: if the range has one or no elements, it is already sorted
+        if left >= right:
+            return
+
+        # Partition the array and get the pivot index
+        pivot_index = self._partition(nums, left, right)
+
+        # Recursively sort the sub-arrays
+        self._quick_sort(nums, left, pivot_index - 1)
+        self._quick_sort(nums, pivot_index + 1, right)
+
+    def _partition(self, nums: List[int], left: int, right: int) -> int:
+        pivot = nums[right]
+        low_index = left
+
+        # Rearrange elements so that those greater than the pivot are on the left
+        for i in range(left, right):
+            if self._compare(nums[i], pivot):
+                nums[i], nums[low_index] = nums[low_index], nums[i]
+                low_index += 1
+
+        # Place the pivot in its correct position
+        nums[low_index], nums[right] = nums[right], nums[low_index]
+        return low_index
+
+    def _compare(self, first_num: int, second_num: int) -> bool:
+        # Compare concatenated strings to decide the order
+        return str(first_num) + str(second_num) > str(second_num) + str(
+            first_num
+        )
+
+
+class Solution:
+    def largestNumber(self, nums: List[int]) -> str:
+        # Edge case: if all numbers are zero, return "0"
+        if not any(nums):
+            return "0"
+
+        # Custom comparison function for heapq (simulating the comparator in Java)
+        class LargerStrComparator(str):
+            def __lt__(self, other):
+                # Custom comparison: return True if self+other > other+self
+                return self + other > other + self
+
+        # Priority queue (min-heap), but we push elements using a custom comparator
+        heap = []
+        for num in nums:
+            heapq.heappush(heap, LargerStrComparator(str(num)))
+
+        # Build the result string by popping from the heap
+        result = []
+        while heap:
+            result.append(heapq.heappop(heap))
+
+        # Concatenate and return the result
+        largest_num = "".join(result)
+
+        # Handle case where all elements are "0"
+        return "0" if largest_num[0] == "0" else largest_num
+
+
+
+
+
+
+
+
+
+
+**Daily Question 5**
+680. Valid Palindrome II
+Easy
+Topics
+Companies
+Given a string s, return true if the s can be palindrome after deleting at most one character from it.
+
+ 
+
+Example 1:
+
+Input: s = "aba"
+Output: true
+Example 2:
+
+Input: s = "abca"
+Output: true
+Explanation: You could delete the character 'c'.
+Example 3:
+
+Input: s = "abc"
+Output: false
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s consists of lowercase English letters.
+
+
+class Solution:
+    def validPalindrome(self, s: str) -> bool:
+        def check_palindrome(s, i, j):
+            while i < j:
+                if s[i] != s[j]:
+                    return False
+                i += 1
+                j -= 1
+            
+            return True
+
+        i = 0
+        j = len(s) - 1
+        while i < j:
+            # Found a mismatched pair - try both deletions
+            if s[i] != s[j]:
+                return check_palindrome(s, i, j - 1) or check_palindrome(s, i + 1, j)
+            i += 1
+            j -= 1
+        
+        return True
