@@ -1,0 +1,786 @@
+**Question 1**
+
+4. Median of Two Sorted Arrays
+Solved
+Hard
+Topics
+Companies
+Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.
+
+The overall run time complexity should be O(log (m+n)).
+
+ 
+
+Example 1:
+
+Input: nums1 = [1,3], nums2 = [2]
+Output: 2.00000
+Explanation: merged array = [1,2,3] and median is 2.
+Example 2:
+
+Input: nums1 = [1,2], nums2 = [3,4]
+Output: 2.50000
+Explanation: merged array = [1,2,3,4] and median is (2 + 3) / 2 = 2.5.
+ 
+
+Constraints:
+
+nums1.length == m
+nums2.length == n
+0 <= m <= 1000
+0 <= n <= 1000
+1 <= m + n <= 2000
+-106 <= nums1[i], nums2[i] <= 106
+
+
+
+Approach 3: A Better Binary Search
+Intuition
+Recall the previous approach where we perform a binary search over the 'merged' array consisting of nums1 and nums2, resulting in a time complexity of O(log(m⋅n)). We could further improve the algorithm by performing the binary search only on the smaller array of nums1 and nums2, thus the time complexity is reduced to O(log(min(m,n))).
+
+The main idea is similar to approach 2, where we need to find a point of partition in both arrays such that the maximum of the smaller half is less than or equal to the minimum of the larger half.
+
+However, instead of partitioning over the merged arrays, we can only focus on partitioning the smaller array (let's call this array A). Suppose the partition index is partitionA, we specify that the smaller half contains (m + n + 1) / 2 elements, and we can use this feature to our advantage by directly making partitionB equal to (m + n + 1) / 2 - partitionA, thus the smaller halves of both arrays always contain a total of (m + n + 1) / 2 elements, as shown in the picture below.
+
+img
+
+The next step is to compare these edge elements.
+
+img
+
+If both maxLeftA <= minRightB and maxLeftB <= minRightA hold, it means that we have partitioned arrays at the correct place.
+
+The smaller half consists of two sections A_left and B_left
+THe larger half consists of two sections A_right and B_right
+We just need to find the maximum value from the smaller half as max(A[maxLeftA], B[maxLeftB]) and the minimum value from the larger half as min(A[minRightA], B[minRightB]). The median value depends on these four boundary values and the total length of the input arrays and we can compute it by situation.
+
+img
+
+If maxLeftA > minRightB, it implies that maxLeftA is too large to be in the smaller half and we should look for a smaller partition value of A.
+
+img
+
+Otherwise, it denotes that minRightA is too small to be in the larger half and we should look for a larger partition value of A.
+
+img
+
+
+Algorithm
+Assuming nums1 to be the smaller array (If nums2 is smaller, we can swap them). Let m, n represent the size of nums1 and nums2, respectively.
+
+Define the search space for the partitioning index partitionA by setting boundaries as left = 0 and right = m.
+
+While left <= right holds, do the following.
+
+Compute the partition index of nums1 as partitionA = (left + right) / 2. Consequently, the partition index of nums2 is (m + n + 1) / 2 - partitionA.
+
+Obtain the edge elements:
+
+Determine the maximum value of the section A_left as maxLeftA = nums1[partitionA - 1]. If partitionA - 1 < 0, set it as maxLeftA = float(-inf).
+Determine the minimum value of the section A_right as minRightA = nums1[partitionA]. If partitionA >= m, set it as minRightA = float(inf).
+Determine the maximum value of the section B_left as maxLeftB = nums2[partitionB - 1]. If partitionB - 1 < 0, set it as maxLeftB = float(-inf).
+Determine the maximum value of the section B_right as minRightB = nums2[partitionB]. If partitionB >= n, set it as minRightB = float(inf).
+Compare and recalculate: Compare maxLeftA with minRightB and maxLeftB with minRightA.
+
+If maxLeftA > minRightB, it means the maxLeftA is too large to be in the smaller half, so we update right = partitionA - 1 to move to the left half of the search space.
+If maxLeftB > minRightA, it means that we are too far on the left side for partitionA and we need to go to the right half of the search space by updating left = partitionA + 1.
+Repeat step 4.
+
+When both maxLeftA <= minRightB and maxLeftB <= minRightA are true:
+
+If (m + n) % 2 = 0, the median value is the average of the maximum value of the smaller half and the minimum value of the larger half, given by answer = (max(maxLeftA, maxLeftB) + min(minRightA, minRightB)) / 2.
+Otherwise, the median value is the maximum value of the smaller half, given by answer = max(maxLeftA, maxLeftB).
+Implementation
+
+
+class Solution:
+    def findMedianSortedArrays(
+        self, nums1: List[int], nums2: List[int]
+    ) -> float:
+        if len(nums1) > len(nums2):
+            return self.findMedianSortedArrays(nums2, nums1)
+
+        m, n = len(nums1), len(nums2)
+        left, right = 0, m
+
+        while left <= right:
+            partitionA = (left + right) // 2
+            partitionB = (m + n + 1) // 2 - partitionA
+
+            maxLeftA = (
+                float("-inf") if partitionA == 0 else nums1[partitionA - 1]
+            )
+            minRightA = float("inf") if partitionA == m else nums1[partitionA]
+            maxLeftB = (
+                float("-inf") if partitionB == 0 else nums2[partitionB - 1]
+            )
+            minRightB = float("inf") if partitionB == n else nums2[partitionB]
+
+            if maxLeftA <= minRightB and maxLeftB <= minRightA:
+                if (m + n) % 2 == 0:
+                    return (
+                        max(maxLeftA, maxLeftB) + min(minRightA, minRightB)
+                    ) / 2
+                else:
+                    return max(maxLeftA, maxLeftB)
+            elif maxLeftA > minRightB:
+                right = partitionA - 1
+            else:
+                left = partitionA + 1
+
+
+Complexity Analysis
+Let m be the size of array nums1 and n be the size of array nums2.
+
+Time complexity: O(log(min(m,n)))
+
+We perform a binary search over the smaller array of size min(m,n).
+Space complexity: O(1)
+
+The algorithm only requires a constant amount of additional space to store and update a few parameters during the binary search.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Question 2**
+
+973. K Closest Points to Origin
+Medium
+Topics
+Companies
+Given an array of points where points[i] = [xi, yi] represents a point on the X-Y plane and an integer k, return the k closest points to the origin (0, 0).
+
+The distance between two points on the X-Y plane is the Euclidean distance (i.e., √(x1 - x2)2 + (y1 - y2)2).
+
+You may return the answer in any order. The answer is guaranteed to be unique (except for the order that it is in).
+
+Example 1:
+
+
+Input: points = [[1,3],[-2,2]], k = 1
+Output: [[-2,2]]
+Explanation:
+The distance between (1, 3) and the origin is sqrt(10).
+The distance between (-2, 2) and the origin is sqrt(8).
+Since sqrt(8) < sqrt(10), (-2, 2) is closer to the origin.
+We only want the closest k = 1 points from the origin, so the answer is just [[-2,2]].
+Example 2:
+
+Input: points = [[3,3],[5,-1],[-2,4]], k = 2
+Output: [[3,3],[-2,4]]
+Explanation: The answer [[-2,4],[3,3]] would also be accepted.
+
+Constraints:
+
+1 <= k <= points.length <= 104
+-104 <= xi, yi <= 104
+
+
+
+
+Approach 3: Binary Search
+Intuition
+
+Since this problem is asking us to identify the first k sorted points, another approach that may come to mind is a binary search. In a standard binary search approach, we would have a sorted array of data, a defined target condition, and a set range of values to attempt. The binary search process involves picking a midpoint of the range and then figuring out on which side of the midpoint the target lies in O(1) time. By repeating this process, we can isolate the target condition in only O(logN) time.
+
+Without a sorted points array, applying a binary search technique to the current problem would require us to modify the standard method. For this modified approach we would first choose a target distance, then we would iterate through every point during each binary search loop to check if our target distance contains exactly k points. If it contains less than k points, we will increase our target distance, and vice versa, until we find a target distance that contains exactly k points. This would result in an average time complexity of O(N⋅logN), which is no better than the standard sorting method.
+
+In this case, however, we can improve upon the time complexity of this modified binary search by eliminating one set of points at the end of each iteration. If the target distance yields fewer than k closer points, then we know that each of those points belongs in our answer and can then be ignored in later iterations. If the target distance yields more than k closer points, on the other hand, we know that we can discard the points that fell outside the target distance.
+
+By roughly halving the remaining points in each iteration of the binary search, we reduce the total number of processes to N+ 
+2
+N
+​
+ + 
+4
+N
+​
+ + 
+8
+N
+​
+ +...+ 
+N
+N
+​
+ =2N. This results in an average time complexity of O(N).
+
+Since we're going to be using the midpoint of the range of distances for each iteration of our binary search, we should calculate the actual Euclidean distance for each point, rather than using the squared distance as in the other approaches. An even distribution of the points in the input array will yield an even distribution of distances, but an uneven distribution of squared distances.
+
+As the efficiency of this solution relies on averaging as close to a middle split of the points as possible on each iteration of the binary search, the use of Euclidean distances will be more efficient than the use of squared Euclidean distances. We can precompute these distances in a separate array prior to performing the binary search, however, to lessen the overall processing required. This will also allow us to use an array of reference indices in our binary search, rather than having to create and modify more complex arrays during each iteration.
+
+During each iteration of the binary search, we will split the points into two arrays, closer, which contains all of the points that are closer than or equal to the current target distance, and farther, which contains all of the points that are farther than the target distance. If the closer array contains fewer than k points, we can add those points to our answer array (closest) and adjust k to reflect the number of points still left to be found. Then we can focus on the remaining points in the farther array for the next round. If the closer array contains more than k points, we can discard the farther array. In either case, we will need to update our range to match the array we keep.
+
+Once the answer array is complete, we can build and return an array of the k closest points.
+
+Algorithm
+
+Precompute the Euclidean distances of each point.
+Define the initial binary search range by identifying the farthest computed distance.
+Perform a binary search from low to high using the reference distances.
+Calculate the midpoint of the remaining range as the target distance.
+Split the remaining points into those closer and those farther than the target distance.
+If the closer array has fewer than k points, add them to the closest array and adjust the value of k.
+Keep only the appropriate remaining array for the next iteration and update the binary search range.
+Once k elements have been added to the closest array, return the k closest points.
+
+
+
+class Solution:
+    def kClosest(self, points: List[List[int]], k: int) -> List[List[int]]:
+        # Precompute the Euclidean distance for each point
+        distances = [self.euclidean_distance(point) for point in points]
+        # Create a reference list of point indices
+        remaining = [i for i in range(len(points))]
+        # Define the initial binary search range
+        low, high = 0, max(distances)
+        
+        # Perform a binary search of the distances
+        # to find the k closest points
+        closest = []
+        while k:
+            mid = (low + high) / 2
+            closer, farther = self.split_distances(remaining, distances, mid)
+            if len(closer) > k:
+                # If more than k points are in the closer distances
+                # then discard the farther points and continue
+                remaining = closer
+                high = mid
+            else:
+                # Add the closer points to the answer array and keep
+                # searching the farther distances for the remaining points
+                k -= len(closer)
+                closest.extend(closer)
+                remaining = farther
+                low = mid
+                
+        # Return the k closest points using the reference indices
+        return [points[i] for i in closest]
+
+    def split_distances(self, remaining: List[int], distances: List[float],
+                        mid: int) -> List[List[int]]:
+        """Split the distances around the midpoint
+        and return them in separate lists."""
+        closer, farther = [], []
+        for index in remaining:
+            if distances[index] <= mid:
+                closer.append(index)
+            else:
+                farther.append(index)
+        return [closer, farther]
+
+    def euclidean_distance(self, point: List[int]) -> float:
+        """Calculate and return the squared Euclidean distance."""
+        return point[0] ** 2 + point[1] ** 2
+
+
+Complexity Analysis
+
+Here N refers to the length of the given array points.
+
+Time complexity: O(N)
+
+While this binary search variant has a worst-case time complexity of O(N 
+2
+ ), it has an average time complexity of O(N). It achieves this by halving (on average) the remaining elements needing to be processed at each iteration, which results in N+ 
+2
+N
+​
+ + 
+4
+N
+​
+ + 
+8
+N
+​
+ +...+ 
+N
+N
+​
+ =2N total processes. This yields an average time complexity of O(N).
+
+Space complexity: O(N)
+
+An extra O(N) space is required for the arrays containing distances and reference indices.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Question 3**
+395. Longest Substring with At Least K Repeating Characters
+Medium
+Topics
+Companies
+Given a string s and an integer k, return the length of the longest substring of s such that the frequency of each character in this substring is greater than or equal to k.
+
+if no such substring exists, return 0.
+
+ 
+
+Example 1:
+
+Input: s = "aaabb", k = 3
+Output: 3
+Explanation: The longest substring is "aaa", as 'a' is repeated 3 times.
+Example 2:
+
+Input: s = "ababbc", k = 2
+Output: 5
+Explanation: The longest substring is "ababb", as 'a' is repeated 2 times and 'b' is repeated 3 times.
+ 
+
+Constraints:
+
+1 <= s.length <= 104
+s consists of only lowercase English letters.
+1 <= k <= 105
+
+
+
+
+
+Approach 3: Sliding Window
+Intuition
+
+There is another intuitive method to solve the problem by using the Sliding Window Approach. The sliding window slides over the string s and validates each character. Based on certain conditions, the sliding window either expands or shrinks.
+
+A substring is valid if each character has at least k frequency. The main idea is to find all the valid substrings with a different number of unique characters and track the maximum length. Let's look at the algorithm in detail.
+
+Algorithm
+
+Find the number of unique characters in the string s and store the count in variable maxUnique. For s = aabcbacad, the unique characters are a,b,c,d and maxUnique = 4.
+
+Iterate over the string s with the value of currUnique ranging from 1 to maxUnique. In each iteration, currUnique is the maximum number of unique characters that must be present in the sliding window.
+
+The sliding window starts at index windowStart and ends at index windowEnd and slides over string s until windowEnd reaches the end of string s. At any given point, we shrink or expand the window to ensure that the number of unique characters is not greater than currUnique.
+
+If the number of unique character in the sliding window is less than or equal to currUnique, expand the window from the right by adding a character to the end of the window given by windowEnd
+
+Otherwise, shrink the window from the left by removing a character from the start of the window given by windowStart.
+
+Keep track of the number of unique characters in the current sliding window having at least k frequency given by countAtLeastK. Update the result if all the characters in the window have at least k frequency.
+
+
+
+class Solution {
+public:
+    int longestSubstring(string s, int k) {
+        int countMap[26];
+        int maxUnique = getMaxUniqueLetters(s);
+        int result = 0;
+        for (int currUnique = 1; currUnique <= maxUnique; currUnique++) {
+            // reset countMap
+            memset(countMap, 0, sizeof(countMap));
+            int windowStart = 0, windowEnd = 0, idx = 0, unique = 0, countAtLeastK = 0;
+            while (windowEnd < s.size()) {
+                // expand the sliding window
+                if (unique <= currUnique) {
+                    idx = s[windowEnd] - 'a';
+                    if (countMap[idx] == 0) unique++;
+                    countMap[idx]++;
+                    if (countMap[idx] == k) countAtLeastK++;
+                    windowEnd++;
+                }
+                // shrink the sliding window
+                else {
+                    idx = s[windowStart] - 'a';
+                    if (countMap[idx] == k) countAtLeastK--;
+                    countMap[idx]--;
+                    if (countMap[idx] == 0) unique--;
+                    windowStart++;
+                }
+                if (unique == currUnique && unique == countAtLeastK)
+                    result = max(windowEnd - windowStart, result);
+            }
+        }
+
+        return result;
+    }
+
+    // get the maximum number of unique letters in the string s
+    int getMaxUniqueLetters(string s) {
+        bool map[26] = {0};
+        int maxUnique = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (!map[s[i] - 'a']) {
+                maxUnique++;
+                map[s[i] - 'a'] = true;
+            }
+        }
+        return maxUnique;
+    }
+};
+
+
+Complexity Analysis
+
+Time Complexity : O(maxUnique⋅N). We iterate over the string of length N, maxUnqiue times. Ideally, the number of unique characters in the string would not be more than 26 (a to z). Hence, the time complexity is approximately O(26⋅N) = O(N)
+
+Space Complexity: O(1) We use constant extra space of size 26 to store the countMap.
+
+
+
+
+
+
+
+
+
+
+
+**Question 4**
+932. Beautiful Array
+Medium
+Topics
+Companies
+An array nums of length n is beautiful if:
+
+nums is a permutation of the integers in the range [1, n].
+For every 0 <= i < j < n, there is no index k with i < k < j where 2 * nums[k] == nums[i] + nums[j].
+Given the integer n, return any beautiful array nums of length n. There will be at least one valid answer for the given n.
+
+ 
+
+Example 1:
+
+Input: n = 4
+Output: [2,1,4,3]
+Example 2:
+
+Input: n = 5
+Output: [3,1,2,5,4]
+ 
+
+Constraints:
+
+1 <= n <= 1000
+
+
+Approach 1: Divide and Conquer
+Intuition
+
+First, notice that the condition is equivalent to saying that A has no arithmetic subsequence. We'll use the term "arithmetic-free" interchangeably with "beautiful".
+
+One way is to guess that we should divide and conquer. One reason for this is that the condition is linear, so if the condition is satisfied by variables taking on values (1, 2, ..., n), it is satisfied by those variables taking on values (a + b, a + 2*b, a + 3*b, ..., a + (n-1)*b) instead.
+
+If we perform a divide and conquer, then we have two parts left and right, such that each part is arithmetic-free, and we only want that a triple from both parts is not arithmetic. Looking at the conditions:
+
+2*A[k] = A[i] + A[j]
+(i < k < j), i from left, j from right
+we can guess that because the left hand side 2*A[k] is even, we can choose left to have all odd elements, and right to have all even elements.
+
+Another way we could arrive at this is to try to place a number in the middle, like 5. We will have 4 and 6 say, to the left of 5, and 7 to the right of 6, etc. We see that in general, odd numbers move towards one direction and even numbers towards another direction.
+
+One final way we could arrive at this is to inspect possible answers arrived at by brute force. On experimentation, we see that many answers have all the odd elements to one side, and all the even elements to the other side, with only minor variation.
+
+Algorithm
+
+Looking at the elements 1, 2, ..., N, there are (N+1) / 2 odd numbers and N / 2 even numbers.
+
+We solve for elements 1, 2, ..., (N+1) / 2 and map these numbers onto 1, 3, 5, .... Similarly, we solve for elements 1, 2, ..., N/2 and map these numbers onto 2, 4, 6, ....
+
+We can compose these solutions by concatenating them, since an arithmetic sequence never starts and ends with elements of different parity.
+
+We memoize the result to arrive at the answer quicker.
+
+
+
+class Solution {
+    Map<Integer, int[]> memo;
+    public int[] beautifulArray(int N) {
+        memo = new HashMap();
+        return f(N);
+    }
+
+    public int[] f(int N) {
+        if (memo.containsKey(N))
+            return memo.get(N);
+
+        int[] ans = new int[N];
+        if (N == 1) {
+            ans[0] = 1;
+        } else {
+            int t = 0;
+            for (int x: f((N+1)/2))  // odds
+                ans[t++] = 2*x - 1;
+            for (int x: f(N/2))  // evens
+                ans[t++] = 2*x;
+        }
+        memo.put(N, ans);
+        return ans;
+    }
+}
+
+
+
+Complexity Analysis
+
+Time Complexity: O(NlogN). The function f is called only O(logN) times, and each time does O(N) work.
+
+Space Complexity: O(NlogN).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Question 5**
+
+1274. Number of Ships in a Rectangle
+Hard
+Topics
+Companies
+Hint
+(This problem is an interactive problem.)
+
+Each ship is located at an integer point on the sea represented by a cartesian plane, and each integer point may contain at most 1 ship.
+
+You have a function Sea.hasShips(topRight, bottomLeft) which takes two points as arguments and returns true If there is at least one ship in the rectangle represented by the two points, including on the boundary.
+
+Given two points: the top right and bottom left corners of a rectangle, return the number of ships present in that rectangle. It is guaranteed that there are at most 10 ships in that rectangle.
+
+Submissions making more than 400 calls to hasShips will be judged Wrong Answer. Also, any solutions that attempt to circumvent the judge will result in disqualification.
+
+ 
+
+Example :
+
+
+Input: 
+ships = [[1,1],[2,2],[3,3],[5,5]], topRight = [4,4], bottomLeft = [0,0]
+Output: 3
+Explanation: From [0,0] to [4,4] we can count 3 ships within the range.
+Example 2:
+
+Input: ans = [[1,1],[2,2],[3,3]], topRight = [1000,1000], bottomLeft = [0,0]
+Output: 3
+ 
+
+Constraints:
+
+On the input ships is only given to initialize the map internally. You must solve this problem "blindfolded". In other words, you must find the answer using the given hasShips API, without knowing the ships position.
+0 <= bottomLeft[0] <= topRight[0] <= 1000
+0 <= bottomLeft[1] <= topRight[1] <= 1000
+topRight != bottomLeft
+
+
+
+
+Overview
+There is an open sea with ships at some random locations. We are given two coordinates representing the bottomLeft and topRight corners of a rectangle defining a portion of the sea. There can be up to 10 ships at different coordinates inside this area, and we can ask the game master if there are any ships in a given sub-region of the sea.
+A condition of the game is that we can ask this question at most 400 times; to win the game we must find the exact number of ships.
+
+ships
+
+At first, this problem looks like a blind game, but this makes the problem altogether more interesting.
+
+There can be only one ship at any coordinate, so let's calculate the maximum number of possible points.
+As per the problem statement, the maximum size of the Cartesian plane is (1,000 by 1,000) which means that the maximum number of possible points where a ship can be present is 1,000,000. We only have 400 chances to find a ship, so a brute force approach will not help here; we have to be smart!
+
+Let's look at a more efficient approach to solving this problem.
+
+Approach 1: Divide And Conquer
+Intuition
+
+Because we are only allowed 400 guesses and there could be up to a million points in the sea, we know that checking every coordinate is not a feasible strategy. However, by starting from a larger zone and recursively checking smaller and smaller zones, we can eliminate any areas that do not contain a single ship and thus limit our search to the remaining area.
+
+In this way, we can use an elimination technique to concentrate our search in the right direction. To apply this, we will have to first divide the rectangular Cartesian plane into a certain number of roughly equal parts.
+
+For each sub-rectangle, we will make a separate call to the method hasShip(). If a sub-rectangle does not contain a ship, it can be eliminated from future searching.
+
+We can perform a similar search process for the remaining sub-rectangles until the bottom-left and top-right coordinates converge to a single point (which is the location of a ship).
+
+In this solution, we are dividing the problem into sub-problems until the sub-problem can be solved without diving it further. Such solutions can be implemented recursively.
+
+Now, the important question is what is the optimal number of sub-rectangles at each step?
+
+Let's consider dividing the rectangle into roughly 4 equal parts.
+Thus, we will make 4 calls to hasShip() to determine if ships are present in each sub-rectangle; any empty sub-rectangles can then be eliminated from the search space.
+The following figure demonstrates this idea.
+
+ships
+
+Analysis
+
+Since we will divide each rectangle into 4 sub-rectangles recursively, at each level of the recursion tree, we will have 4 
+level
+  possible sub-rectangles.
+
+ships
+
+Calculate the number of levels:
+
+From the problem statement, we know that the maximum size of the original rectangle is (1000⋅1000).
+
+If we recursively divide this rectangle into four equal sub-rectangles, at each level, the maximum number of levels is log 
+4
+​
+ (1000000)≈10
+Thus, the maximum number of levels for any given input will not be greater than 10.
+
+Calculate the number of sub-rectangles:
+
+Suppose that there is a ship at every coordinate point in the sea. In that case, every coordinate would be a leaf node of the recursion diagram shown above. We would need over a million calls to hasShip() to find the exact number of ships, but we are only allowed to make only 400 calls. How do we solve this?
+
+Hint: Read the problem statement one more time.
+
+Let's look at the problem statement carefully. It states that there can be at most 10 ships in the rectangle. This implies that, in the worst case, if each sub-rectangle contains at most one ship, there can be at most 10 non-empty sub-rectangles at any level.
+Thus, the maximum number of sub-rectangles at each level of recursion is 40 (10 that contain a ship and 30 that are empty).
+
+For each sub-rectangle that contains a ship, we will make 4 recursive calls to hasShip(). Thus, even in the worst case scenario, the number of total calls to hasShip() will be less than the number of ships (10) times 4 times the maximum number of levels (log 
+4
+​
+ (1000⋅1000)=10). That is, 10⋅4⋅10=400.
+
+ships
+
+Algorithm
+
+This technique of dividing the problem into more sub-problems of the same or related type until these become simple enough to be solved directly is called Divide and Conquer.
+
+Check if the current rectangle given by topRight and bottomLeft coordinates, contains a ship. ​If so, divide the rectangle into 4​ sub-rectangles and recursively find the number of ships in each sub-rectangle.
+
+Otherwise, terminate the search process. Thus, at each step, we eliminate all rectangles that do not contain a single ship.
+
+To divide the rectangle into 4 equal parts, we will first define the center coordinate of the X and Y axes as midX and midY; thus forming 4 sub-rectangles. The following figure illustrates the idea.
+
+ships
+​
+ships
+
+For each of the sub-rectangles, recursively count the number of ships. The number of ships in a given rectangle will be the sum of the ships returned by the recursive call to each sub-rectangle.
+
+The recursive search process will terminate when either of the following conditions is met:
+
+i. There are no ships in the rectangle.
+
+ii. The rectangle cannot be divided further, i.e the rectangle represents a single point. This condition is true when the topRight co-ordinate is equal to the bottomLeft co-ordinate.
+
+
+
+
+
+class Solution:
+    def countShips(self, sea: 'Sea', topRight: 'Point', bottomLeft: 'Point') -> int:
+        # If the current rectangle does not contain any ships, return 0.         
+        if (bottomLeft.x > topRight.x) or (bottomLeft.y > topRight.y):
+            return 0
+        if not sea.hasShips(topRight, bottomLeft):
+            return 0
+
+        # If the rectangle represents a single point, a ship is located.
+        if (topRight.x == bottomLeft.x) and (topRight.y == bottomLeft.y):
+            return 1
+
+        # Recursively check each of the 4 sub-rectangles for ships.
+        mid_x = (topRight.x + bottomLeft.x) // 2
+        mid_y = (topRight.y + bottomLeft.y) // 2
+        return self.countShips(sea, Point(mid_x, mid_y), bottomLeft) + \
+               self.countShips(sea, topRight, Point(mid_x + 1, mid_y + 1)) + \
+               self.countShips(sea, Point(mid_x, topRight.y), Point(bottomLeft.x, mid_y + 1)) + \
+               self.countShips(sea, Point(topRight.x, mid_y), Point(mid_x + 1, bottomLeft.y))
+
+
+
+Complexity Analysis
+
+Let M be the range of possible x-coordinate values between bottomLeft[0] and topRight[0] and let N be the range of possible y-coordinate values between bottomLeft[1] and topRight[1]. Thus, the maximum possible number of points in the rectangle is M⋅N. Finally, let S be the maximum number of ships in the sea.
+
+Time Complexity: O(S⋅(log 
+2
+​
+ max(M,N)−log 
+4
+​
+ S))
+
+Each call to countShips requires only constant time so the time complexity will be O(1) times the maximum possible number of calls to countShips.
+
+The worst-case scenario is when there is the maximum number of possible ships (S=10) and they are spread out such that after S recursive calls (the log 
+4
+​
+ S level of the recursion tree), there are S regions that each contain 1 ship and the remaining regions are empty.
+
+Each region that contains 1 ship, will result in 4 recursive calls. 3 will return 0 because they do not contain a ship and 1 call will result in 4 more recursive calls because it does contain a ship. This process will repeat until we make a recursive call with the exact coordinates of the ship.
+
+At the latest, we will pinpoint the ship at the maximum depth of the recursion tree which is log 
+2
+​
+ max(M,N) because at each recursive call we divide the search space by half for each of the 2 dimensions.
+
+Thus, once a region contains only 1 ship, it may still take 4⋅(log 
+2
+​
+ max(M,N)−log 
+4
+​
+ S) recursive calls before pinpointing the location of the ship (and returning 1). And since there are S ships, the total number of recursive calls after all regions contain at most 1 ship is 4⋅S⋅(log 
+2
+​
+ max(M,N)−log 
+4
+​
+ S).
+
+Summing up, the time complexity is S+4⋅S⋅(log 
+2
+​
+ max(M,N)−log 
+4
+​
+ S) which in the worst case (when S=10 and M=N=1000) equals 342 recursive calls.
+
+Space Complexity: O(log 
+2
+​
+ max(M,N)).
+
+Each call to countShips uses only constant space so our space complexity is directly related to the maximum height of the recursion call stack. Since we have 2 dimensions of magnitudes M and N respectively, and the search space for each dimension is reduced by half at each recursive call to countShips, the maximum height of the recursion call stack will be log 
+2
+​
+ max(M,N).
+
+
