@@ -1,0 +1,643 @@
+**Question 1**
+729. My Calendar I
+Solved
+Medium
+Topics
+Companies
+Hint
+You are implementing a program to use as your calendar. We can add a new event if adding the event will not cause a double booking.
+
+A double booking happens when two events have some non-empty intersection (i.e., some moment is common to both events.).
+
+The event can be represented as a pair of integers startTime and endTime that represents a booking on the half-open interval [startTime, endTime), the range of real numbers x such that startTime <= x < endTime.
+
+Implement the MyCalendar class:
+
+MyCalendar() Initializes the calendar object.
+boolean book(int startTime, int endTime) Returns true if the event can be added to the calendar successfully without causing a double booking. Otherwise, return false and do not add the event to the calendar.
+ 
+
+Example 1:
+
+Input
+["MyCalendar", "book", "book", "book"]
+[[], [10, 20], [15, 25], [20, 30]]
+Output
+[null, true, false, true]
+
+Explanation
+MyCalendar myCalendar = new MyCalendar();
+myCalendar.book(10, 20); // return True
+myCalendar.book(15, 25); // return False, It can not be booked because time 15 is already booked by another event.
+myCalendar.book(20, 30); // return True, The event can be booked, as the first event takes every time less than 20, but not including 20.
+ 
+
+Constraints:
+
+0 <= start < end <= 109
+At most 1000 calls will be made to book.
+
+Approach #2: Sorted List + Binary Search
+Intuition
+
+If we maintained our events in sorted order, we could check whether an event could be booked in O(logN) time (where N is the number of events already booked) by binary searching for where the event should be placed. We would also have to insert the event in our sorted structure.
+
+Algorithm
+
+Initialize with an empty sorted list data structure calendar.
+For every new interval[start, end) in book() invokation, we check if there is a conflict on each side with neighboring intervals.
+Lookup the first index idx, which maps to an element [s1,e1) in calendar and s > start, and this step can be conducted by binary search (see this explore card) as we keep calendar in sorted order by starting points of intervals. (Notice that there may not be such an idx because start >= all kept intervals. In this case, we don't need to check the following step)
+Check if end > s1. If yes, [start, end) and [s1,e1) must be overlapped, [start, end) is illegal, and we should return false for the invokation now.
+Roll back to the index idx-1, which maps to an element [s2,e2) in calendar and s1 is the largest staring points that satisfy s1 <= start. (Similarly, notice that there may be no element at idx-1 because idx is the 0-th index. In this case, we don't need to check the following step either)
+Check if e2 > start. If yes, [s2,e2) and [start, end) must be overlapped, [start, end) is illegal, and we should return false for the invokation now.
+If [start, end) passes all checkings above, we insert this valid interval at idx in calendar.
+Implementation
+
+We need a data structure that keeps elements sorted and supports fast insertion.
+
+In Java, a TreeMap is the perfect candidate.
+In C++, we can use set container and lower_bound method.
+In Python, we can keep a SortedList.
+
+
+from sortedcontainers import SortedList
+
+class MyCalendar:
+    def __init__(self):
+        self.calendar = SortedList()
+
+    def book(self, start: int, end: int) -> bool:
+        idx = self.calendar.bisect_right((start, end))
+        if (idx > 0 and self.calendar[idx-1][1] > start) or (idx < len(self.calendar) and self.calendar[idx][0] < end):
+            return False
+        self.calendar.add((start, end))
+        return True
+
+
+Complexity Analysis
+
+Like Approach 1, let N be the number of events booked.
+
+Time Complexity: O(NlogN). For each new event, we search that the event is legal in O(logN) time, then insert it in O(logN) time.
+
+Space Complexity: O(N), the size of the data structures used.
+
+Note: In practice, for Python, if you use bisect.insort() or list.insert() to add new events to a built-in list as calendar, it will result in a time complexity as O(N) instead of O(logN) for each insertion operation (see the docs). However, due to the built-in instruction optimization in list.insert() and the constraint of N≤1000 in this problem, this O(N 
+2
+ ) solution may somehow show a better performance in runtime. But we won't provide this solution code here because the time complexity matters.
+
+
+
+
+
+
+
+
+
+
+**Question 2**
+3291. Minimum Number of Valid Strings to Form Target I
+Attempted
+Medium
+Topics
+Hint
+You are given an array of strings words and a string target.
+
+A string x is called valid if x is a prefix of any string in words.
+
+Return the minimum number of valid strings that can be concatenated to form target. If it is not possible to form target, return -1.
+
+ 
+
+Example 1:
+
+Input: words = ["abc","aaaaa","bcdef"], target = "aabcdabc"
+
+Output: 3
+
+Explanation:
+
+The target string can be formed by concatenating:
+
+Prefix of length 2 of words[1], i.e. "aa".
+Prefix of length 3 of words[2], i.e. "bcd".
+Prefix of length 3 of words[0], i.e. "abc".
+Example 2:
+
+Input: words = ["abababab","ab"], target = "ababaababa"
+
+Output: 2
+
+Explanation:
+
+The target string can be formed by concatenating:
+
+Prefix of length 5 of words[0], i.e. "ababa".
+Prefix of length 5 of words[0], i.e. "ababa".
+Example 3:
+
+Input: words = ["abcdef"], target = "xyz"
+
+Output: -1
+
+ 
+
+Constraints:
+
+1 <= words.length <= 100
+1 <= words[i].length <= 5 * 103
+The input is generated such that sum(words[i].length) <= 105.
+words[i] consists only of lowercase English letters.
+1 <= target.length <= 5 * 103
+target consists only of lowercase English letters.
+
+
+from typing import List
+
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+
+def build_trie(words):
+    root = TrieNode()
+    for word in words:
+        node = root
+        for c in word:
+            if c not in node.children:
+                node.children[c] = TrieNode()
+            node = node.children[c]
+    return root
+
+class Solution:
+    def minValidStrings(self, words: List[str], target: str) -> int:
+        root = build_trie(words)
+        n = len(target)
+        dp = [float('inf')] * (n + 1)
+        dp[0] = 0  
+        for i in range(n):
+            if dp[i] == float('inf'):
+                continue
+            node = root
+            j = i
+            while j < n and target[j] in node.children:
+                node = node.children[target[j]]
+                j += 1
+                dp[j] = min(dp[j], dp[i] + 1)
+        return dp[n] if dp[n] != float('inf') else -1    
+
+
+
+
+
+
+
+**Question 3**
+
+731. My Calendar II
+Medium
+Topics
+Companies
+Hint
+You are implementing a program to use as your calendar. We can add a new event if adding the event will not cause a triple booking.
+
+A triple booking happens when three events have some non-empty intersection (i.e., some moment is common to all the three events.).
+
+The event can be represented as a pair of integers startTime and endTime that represents a booking on the half-open interval [startTime, endTime), the range of real numbers x such that startTime <= x < endTime.
+
+Implement the MyCalendarTwo class:
+
+MyCalendarTwo() Initializes the calendar object.
+boolean book(int startTime, int endTime) Returns true if the event can be added to the calendar successfully without causing a triple booking. Otherwise, return false and do not add the event to the calendar.
+ 
+
+Example 1:
+
+Input
+["MyCalendarTwo", "book", "book", "book", "book", "book", "book"]
+[[], [10, 20], [50, 60], [10, 40], [5, 15], [5, 10], [25, 55]]
+Output
+[null, true, true, true, false, true, true]
+
+Explanation
+MyCalendarTwo myCalendarTwo = new MyCalendarTwo();
+myCalendarTwo.book(10, 20); // return True, The event can be booked. 
+myCalendarTwo.book(50, 60); // return True, The event can be booked. 
+myCalendarTwo.book(10, 40); // return True, The event can be double booked. 
+myCalendarTwo.book(5, 15);  // return False, The event cannot be booked, because it would result in a triple booking.
+myCalendarTwo.book(5, 10); // return True, The event can be booked, as it does not use time 10 which is already double booked.
+myCalendarTwo.book(25, 55); // return True, The event can be booked, as the time in [25, 40) will be double booked with the third event, the time [40, 50) will be single booked, and the time [50, 55) will be double booked with the second event.
+ 
+
+Constraints:
+
+0 <= start < end <= 109
+At most 1000 calls will be made to book.
+
+
+
+Approach 1: Using Overlapped Intervals
+Intuition
+We are given a set of bookings in the form [start, end), where start is included, but end is excluded, meaning the booking spans from start to end - 1. The function book(start, end) returns true if the booking can be added without causing a triple booking, and false otherwise. A triple booking occurs when three bookings overlap, such as [[1, 5], [2, 4], [3, 4]], which all intersect between [3, 4]. The booking is only added if the function returns true.
+
+The key problem is preventing a new booking from overlapping with two existing overlapping bookings, which would create a triple booking. For example, in the list [[3, 10], [4, 8], [10, 15], [20, 25]], no triple booking occurs despite overlaps. However, adding [5, 7] would overlap with both [[3, 10], [4, 8]], leading to a triple booking.
+
+To handle this, we track double-overlapping bookings. When book(start, end) is called, we check if the new booking overlaps with any double-overlapped bookings. If it does, we return false; otherwise, we return true, add the booking, and update the double-overlapped list if necessary.
+
+Checking for overlap between two bookings (start1, end1) and (start2, end2) is done by verifying if max(start1, start2) < min(end1, end2). This condition excludes endpoint overlaps, as the intervals are half-open. If they overlap, the overlap interval is (max(start1, start2), min(end1, end2)), also half-open. This can also be observed in the below figure:
+
+fig
+
+Algorithm
+Class MyCalendarTwo will have two data members, bookings which is the list of all bookings we will get, and overlapBookings a list of double overlapping bookings in the previous list. Initialize both as an empty list.
+
+Define the function doesOverlap(start1, end1, start2, end2) which will return true if bookings (start1, end1) and (start2, end2) have an overlap.
+
+Define the function getOverlapped(start1, end1, start2, end2) which will return the overlapping part of the bookings (start1, end1) and (start2, end2).
+
+Implement the function book(start, end) as follows:
+
+Check if the bookings (start, end) overlap with any booking in the list overlapBookings, if yes we can return false from here.
+Iterate over the list bookings and check if (start, end) overlaps with any booking in it. If yes, add the overlapped part in the list overlapBookings.
+Add the booking (start, end) to the list booking.
+If we reach here, we can return true as no triple booking happened.
+
+
+
+class MyCalendarTwo:
+
+    def __init__(self):
+        self.bookings = []
+        self.overlap_bookings = []
+
+    def book(self, start: int, end: int) -> bool:
+        # Check if the new booking overlaps with any double-booked booking.
+        for booking in self.overlap_bookings:
+            if self.does_overlap(booking[0], booking[1], start, end):
+                return False
+
+        # Add any new double overlaps that the current booking creates.
+        for booking in self.bookings:
+            if self.does_overlap(booking[0], booking[1], start, end):
+                self.overlap_bookings.append(
+                    self.get_overlapped(booking[0], booking[1], start, end)
+                )
+
+        # Add the new booking to the list of bookings.
+        self.bookings.append((start, end))
+        return True
+
+    # Return True if the booking [start1, end1) & [start2, end2) overlaps.
+    def does_overlap(
+        self, start1: int, end1: int, start2: int, end2: int
+    ) -> bool:
+        return max(start1, start2) < min(end1, end2)
+
+    # Return the overlapping booking between [start1, end1) & [start2, end2).
+    def get_overlapped(
+        self, start1: int, end1: int, start2: int, end2: int
+    ) -> tuple:
+        return max(start1, start2), min(end1, end2)
+
+
+Complexity Analysis
+Here, N is the size of the list of bookings.
+
+Time complexity: O(N)
+
+The time complexity for the book(start, end) function is O(N) because we iterate through the bookings list to check for overlaps and possibly add a new booking. Additionally, we check the overlapBookings list, which tracks overlaps. Since the size of overlapBookings is always smaller than or equal to the size of bookings, the overall time complexity remains O(N).
+
+Space complexity: O(N)
+
+We maintain two lists: bookings for all the bookings and overlapBookings for the overlapping intervals. The size of overlapBookings can never exceed the size of bookings, so the total space complexity is O(N).
+
+
+
+**Question 4**
+315. Count of Smaller Numbers After Self
+Attempted
+Hard
+Topics
+Companies
+Given an integer array nums, return an integer array counts where counts[i] is the number of smaller elements to the right of nums[i].
+
+ 
+
+Example 1:
+
+Input: nums = [5,2,6,1]
+Output: [2,1,1,0]
+Explanation:
+To the right of 5 there are 2 smaller elements (2 and 1).
+To the right of 2 there is only 1 smaller element (1).
+To the right of 6 there is 1 smaller element (1).
+To the right of 1 there is 0 smaller element.
+Example 2:
+
+Input: nums = [-1]
+Output: [0]
+Example 3:
+
+Input: nums = [-1,-1]
+Output: [0,0]
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+-104 <= nums[i] <= 104
+
+
+
+Overview
+The problem is straightforward. For each num in nums, we need to obtain the number of smaller elements after num.
+
+A straightforward approach is to use brute force with two for-loops. The first loop iterates over all num in nums, and the second loop iterates over all elements after num. However, this approach costs O(N 
+2
+ ) and yields Time Limit Exceed, given that N is the length of nums.
+
+Luckily, there are two helpful data structures: segment tree and binary indexed tree, which are able to do the range query in logarithmic time.
+
+Also, a solution based on Merge Sort is available.
+
+Below, we will discuss each of the three approaches: Segment Tree, Binary Indexed Tree, and Merge Sort.
+
+After you finish, you can practice by solving some similar questions:
+
+Reverse Pairs
+Create Sorted Array through Instructions
+
+Approach 1: Segment Tree
+Intuition
+
+Prerequisite: segment tree
+
+If you are not familiar with segment trees, you should check out our Recursive Approach to segment trees tutorial before continuing.
+
+Also, here are some relevant applications for segment trees that you can practice on:
+
+Range Sum Query - Mutable
+Count of Range Sum
+For a full list, check out the segment tree Tag.
+
+For a particular element in nums, located at index i, we want to count how many of the numbers on the right side of index i are smaller than nums[i]. Notice that the value of the smaller numbers must be in the range (−∞,nums[i]−1].
+
+Hence, if we can find the count of each number in the range (−∞,nums[i]−1] on the right side of index i, then the answer will be the sum of those counts.
+
+Therefore, for each index i, we need a query to find the sum of those counts. Recall that the segment tree and the binary indexed tree are two data structures that are generally helpful when solving range query problems.
+
+Since we need counts of values, we can use an approach similar to bucket sort, where we have buckets of values and buckets[value] stores the count of value. For each value, we increment buckets[value] by 1. With this approach, the number of elements smaller than nums[i] is the range sum of (−∞,num−1] in buckets.
+
+With the help of a segment tree or binary indexed tree, we can perform the range sum query in logarithmic time.
+
+Figure 1
+
+Figure 2
+
+With the given constraint -10^4 <= nums[i] <= 10^4, we can initialize buckets from -10^4 to 10^4.
+
+Wait, there is a problem: Usually, we store buckets in an array, so the indices of buckets are non-negative. However, here we need to store some negative values. How can we resolve this problem?
+
+There are two solutions:
+
+Use a map rather than an array.
+Shift all numbers to non-negative.
+Both solutions work, and here we have chosen the second one since it is easier to implement. Interested readers are welcome to try the first one on their own.
+
+To shift all numbers to non-negative, we simply add a constant. Here we chose the constant offset = 10^4 and increase each number by offset:
+
+nums[i] = nums[i] + offset
+The smallest number -10^4 becomes 0 under this shift.
+
+Figure 3
+
+Note that while querying a particular index, we only need to consider elements that are on the right side of the index. Therefore we need to make sure that when we query an index, say i, only elements from index i+1 to the end of the array are present in the buckets.
+
+To achieve this, we need to traverse nums from right to left, while performing range sum queries and updating the counts.
+
+Similarly, with the help of a segment tree or binary indexed tree, we can perform the updates in logarithmic time.
+
+Figure 4
+
+(For convenience, the offset is not included in the above picture.)
+
+Algorithm
+
+Implement the segment tree. Since the tree is initialized with all zeros, only update and query need to be implemented. Set offset = 10^4.
+
+Iterate over each num in nums in reverse. For each num:
+
+Shift num to num + offset.
+Query the number of elements in the segment tree smaller than num.
+Update the count of num in the segment tree.
+Return the result.
+
+Implementation
+
+class Solution:
+    def countSmaller(self, nums: List[int]) -> List[int]:
+        # implement segment tree
+        def update(index, value, tree, size):
+            index += size  # shift the index to the leaf
+            # update from leaf to root
+            tree[index] += value
+            while index > 1:
+                index //= 2
+                tree[index] = tree[index * 2] + tree[index * 2 + 1]
+
+        def query(left, right, tree, size):
+            # return sum of [left, right)
+            result = 0
+            left += size  # shift the index to the leaf
+            right += size
+            while left < right:
+                # if left is a right node
+                # bring the value and move to parent's right node
+                if left % 2 == 1:
+                    result += tree[left]
+                    left += 1
+                # else directly move to parent
+                left //= 2
+                # if right is a right node
+                # bring the value of the left node and move to parent
+                if right % 2 == 1:
+                    right -= 1
+                    result += tree[right]
+                # else directly move to parent
+                right //= 2
+            return result
+
+        offset = 10**4  # offset negative to non-negative
+        size = 2 * 10**4 + 1  # total possible values in nums
+        tree = [0] * (2 * size)
+        result = []
+        for num in reversed(nums):
+            smaller_count = query(0, num + offset, tree, size)
+            result.append(smaller_count)
+            update(num + offset, 1, tree, size)
+        return reversed(result)
+
+Complexity Analysis
+
+Let N be the length of nums and M be the difference between the maximum and minimum values in nums.
+
+Note that for convenience, we fix M=2∗10 
+4
+  in the above implementations.
+
+Time Complexity: O(Nlog(M)).
+We need to iterate over nums. For each element, we spend O(log(M)) to find the number of smaller elements after it, and spend O(log(M)) time to update the counts. In total, we need O(N⋅log(M))=O(Nlog(M)) time.
+
+Space Complexity: O(M), since we need, at most, an array of size 2M+2 to store the segment tree.
+We need at most M+1 buckets, where the extra 1 is for the value 0. For the segment tree, we need twice the number of buckets, which is (M+1)×2=2M+2.
+
+
+
+
+
+
+
+
+
+**Question 5**
+3479. Fruits Into Baskets III
+Attempted
+Medium
+Topics
+Hint
+You are given two arrays of integers, fruits and baskets, each of length n, where fruits[i] represents the quantity of the ith type of fruit, and baskets[j] represents the capacity of the jth basket.
+
+From left to right, place the fruits according to these rules:
+
+Each fruit type must be placed in the leftmost available basket with a capacity greater than or equal to the quantity of that fruit type.
+Each basket can hold only one type of fruit.
+If a fruit type cannot be placed in any basket, it remains unplaced.
+Return the number of fruit types that remain unplaced after all possible allocations are made.
+
+ 
+
+Example 1:
+
+Input: fruits = [4,2,5], baskets = [3,5,4]
+
+Output: 1
+
+Explanation:
+
+fruits[0] = 4 is placed in baskets[1] = 5.
+fruits[1] = 2 is placed in baskets[0] = 3.
+fruits[2] = 5 cannot be placed in baskets[2] = 4.
+Since one fruit type remains unplaced, we return 1.
+
+Example 2:
+
+Input: fruits = [3,6,1], baskets = [6,4,7]
+
+Output: 0
+
+Explanation:
+
+fruits[0] = 3 is placed in baskets[0] = 6.
+fruits[1] = 6 cannot be placed in baskets[1] = 4 (insufficient capacity) but can be placed in the next available basket, baskets[2] = 7.
+fruits[2] = 1 is placed in baskets[1] = 4.
+Since all fruits are successfully placed, we return 0.
+
+ 
+
+Constraints:
+
+n == fruits.length == baskets.length
+1 <= n <= 105
+1 <= fruits[i], baskets[i] <= 109
+
+
+simple O(nsqrt(n)) solution explained
+
+david_hoengy
+745
+a day ago
+Python3
+Approach
+Use Sqrt Decomposition. Create sqrt(n) buckets of size sqrt(n) each, with elements like (basket_size, basket_idx). Sort the buckets prior to processing the fruits, so that the max size basket is always the last element. Scan through the buckets from left to right to find the first bucket that has max_basket_size >= fruit_quantity. Then scan through this bucket to find and remove the smallest index which has basket_size >= fruit_quantity.
+
+Complexity
+Time complexity: O(nsqrtn)
+
+Space complexity: O(n)
+
+
+class Solution:
+    def numOfUnplacedFruits(self, fruits: List[int], baskets: List[int]) -> int:
+        n = len(fruits)
+
+        # sqrt decomposition
+        bucket_sz = int(ceil(sqrt(n)))
+
+        # idx -> baskets within [idx*bucket_sz, (idx+1)*bucket_sz)
+        buckets = [[] for _ in range(bucket_sz)]
+
+        for i,basket in enumerate(baskets):
+            bucket_idx = i // bucket_sz
+            buckets[bucket_idx].append((basket, i))
+
+        # sort each bucket, so that the last element is always the largest basket
+        for bucket in buckets:
+            bucket.sort()
+
+        # assign fruits to baskets
+        ret = 0
+        
+        for cnt in fruits:
+            for bucket in buckets:
+
+                # bucket contains a basket that can fit our fruit
+                if bucket and bucket[-1][0] >= cnt:
+                    # find lowest index basket which can fit our fruit
+                    chosen = min((i, basket) for basket,i in bucket if basket >= cnt)
+                    bucket.remove((chosen[1], chosen[0]))
+                    break
+            else:
+                ret += 1
+
+        return ret
+
+
+class SegmentTree:
+    def __init__(self, leaf_nodes):
+        l = len(leaf_nodes)
+        self.n = 2 ** math.ceil(math.log2(l))
+        self.nodes = [0] * (2 * self.n)
+        for i, val in enumerate(leaf_nodes):
+            self.update(i + self.n, val)
+    
+    def update(self, i, val):
+        self.nodes[i] = val
+        while i > 1:
+            i = i // 2
+            self.nodes[i] = max(self.nodes[i*2], self.nodes[i*2+1])
+    
+    def find(self, target_val):
+        if self.nodes[1] < target_val:
+            return -1
+        i = 1
+        while i < self.n:
+            if self.nodes[i * 2] >= target_val:
+                i = i * 2
+            else:
+                i = i * 2 + 1
+        return i
+        
+class Solution:
+    def numOfUnplacedFruits(self, fruits: List[int], baskets: List[int]) -> int:
+        s_t = SegmentTree(baskets)
+        res = 0
+        for val in fruits:
+            node_id = s_t.find(val)
+            if node_id != -1:
+                s_t.update(node_id, -1)
+            else:
+                res += 1
+        return res
+
+
+
+
