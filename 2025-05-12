@@ -1,0 +1,355 @@
+Question 1
+
+
+339. Nested List Weight Sum
+Medium
+Topics
+Companies
+You are given a nested list of integers nestedList. Each element is either an integer or a list whose elements may also be integers or other lists.
+
+The depth of an integer is the number of lists that it is inside of. For example, the nested list [1,[2,2],[[3],2],1] has each integer's value set to its depth.
+
+Return the sum of each integer in nestedList multiplied by its depth.
+
+ 
+
+Example 1:
+
+
+Input: nestedList = [[1,1],2,[1,1]]
+Output: 10
+Explanation: Four 1's at depth 2, one 2 at depth 1. 1*2 + 1*2 + 2*1 + 1*2 + 1*2 = 10.
+Example 2:
+
+
+Input: nestedList = [1,[4,[6]]]
+Output: 27
+Explanation: One 1 at depth 1, one 4 at depth 2, and one 6 at depth 3. 1*1 + 4*2 + 6*3 = 27.
+Example 3:
+
+Input: nestedList = [0]
+Output: 0
+ 
+
+Constraints:
+
+1 <= nestedList.length <= 50
+The values of the integers in the nested list is in the range [-100, 100].
+The maximum depth of any integer is less than or equal to 50.
+
+
+
+# """
+# This is the interface that allows for creating nested lists.
+# You should not implement it, or speculate about its implementation
+# """
+#class NestedInteger:
+#    def __init__(self, value=None):
+#        """
+#        If value is not specified, initializes an empty list.
+#        Otherwise initializes a single integer equal to value.
+#        """
+#
+#    def isInteger(self):
+#        """
+#        @return True if this NestedInteger holds a single integer, rather than a nested list.
+#        :rtype bool
+#        """
+#
+#    def add(self, elem):
+#        """
+#        Set this NestedInteger to hold a nested list and adds a nested integer elem to it.
+#        :rtype void
+#        """
+#
+#    def setInteger(self, value):
+#        """
+#        Set this NestedInteger to hold a single integer equal to value.
+#        :rtype void
+#        """
+#
+#    def getInteger(self):
+#        """
+#        @return the single integer that this NestedInteger holds, if it holds a single integer
+#        The result is undefined if this NestedInteger holds a nested list
+#        :rtype int
+#        """
+#
+#    def getList(self):
+#        """
+#        @return the nested list that this NestedInteger holds, if it holds a nested list
+#        The result is undefined if this NestedInteger holds a single integer
+#        :rtype List[NestedInteger]
+#        """
+
+class Solution:
+    def depthSum(self, nestedList: List[NestedInteger]) -> int:
+
+
+
+class Solution:
+    def depthSum(self, nestedList: List[NestedInteger]) -> int:
+
+        def dfs(nested_list, depth):
+            total = 0
+            for nested in nested_list:
+                if nested.isInteger():
+                    total += nested.getInteger() * depth
+                else:
+                    total += dfs(nested.getList(), depth + 1)
+            return total
+
+        return dfs(nestedList, 1)
+
+
+
+
+
+
+
+
+
+
+
+
+Question 2
+
+827. Making A Large Island
+Hard
+Topics
+Companies
+You are given an n x n binary matrix grid. You are allowed to change at most one 0 to be 1.
+
+Return the size of the largest island in grid after applying this operation.
+
+An island is a 4-directionally connected group of 1s.
+
+ 
+
+Example 1:
+
+Input: grid = [[1,0],[0,1]]
+Output: 3
+Explanation: Change one 0 to 1 and connect two 1s, then we get an island with area = 3.
+Example 2:
+
+Input: grid = [[1,1],[1,0]]
+Output: 4
+Explanation: Change the 0 to 1 and make the island bigger, only one island with area = 4.
+Example 3:
+
+Input: grid = [[1,1],[1,1]]
+Output: 4
+Explanation: Can't change any 0 to 1, only one island with area = 4.
+ 
+
+Constraints:
+
+n == grid.length
+n == grid[i].length
+1 <= n <= 500
+grid[i][j] is either 0 or 1.
+
+
+
+
+
+
+
+
+
+class Solution:
+    def largestIsland(self, grid: List[List[int]]) -> int:
+        island_sizes = {}
+        island_id = 2
+
+        # Step 1: Mark all islands and calculate their sizes
+        for current_row in range(len(grid)):
+            for current_column in range(len(grid[0])):
+                if grid[current_row][current_column] == 1:
+                    island_sizes[island_id] = self.explore_island(
+                        grid, island_id, current_row, current_column
+                    )
+                    island_id += 1
+
+        # If there are no islands, return 1
+        if not island_sizes:
+            return 1
+
+        # If the entire grid is one island, return its size or size +
+        if len(island_sizes) == 1:
+            island_id -= 1
+            return (
+                island_sizes[island_id]
+                if island_sizes[island_id] == len(grid) * len(grid[0])
+                else island_sizes[island_id] + 1
+            )
+
+        max_island_size = 1
+
+        # Step 2: Try converting every 0 to 1 and calculate the resulting island size
+        for current_row in range(len(grid)):
+            for current_column in range(len(grid[0])):
+                if grid[current_row][current_column] == 0:
+                    current_island_size = 1
+                    neighboring_islands = set()
+
+                    # Check down
+                    if (
+                        current_row + 1 < len(grid)
+                        and grid[current_row + 1][current_column] > 1
+                    ):
+                        neighboring_islands.add(
+                            grid[current_row + 1][current_column]
+                        )
+
+                    # Check up
+                    if (
+                        current_row - 1 >= 0
+                        and grid[current_row - 1][current_column] > 1
+                    ):
+                        neighboring_islands.add(
+                            grid[current_row - 1][current_column]
+                        )
+
+                    # Check right
+                    if (
+                        current_column + 1 < len(grid[0])
+                        and grid[current_row][current_column + 1] > 1
+                    ):
+                        neighboring_islands.add(
+                            grid[current_row][current_column + 1]
+                        )
+
+                    # Check left
+                    if (
+                        current_column - 1 >= 0
+                        and grid[current_row][current_column - 1] > 1
+                    ):
+                        neighboring_islands.add(
+                            grid[current_row][current_column - 1]
+                        )
+
+                    # Sum the sizes of all unique neighboring islands
+                    for island_id in neighboring_islands:
+                        current_island_size += island_sizes[island_id]
+                    max_island_size = max(max_island_size, current_island_size)
+
+        return max_island_size
+
+    def explore_island(
+        self,
+        grid: List[List[int]],
+        island_id: int,
+        current_row: int,
+        current_column: int,
+    ) -> int:
+        if (
+            current_row < 0
+            or current_row >= len(grid)
+            or current_column < 0
+            or current_column >= len(grid[0])
+            or grid[current_row][current_column] != 1
+        ):
+            return 0
+
+        grid[current_row][current_column] = island_id
+
+        return (
+            1
+            + self.explore_island(
+                grid, island_id, current_row + 1, current_column
+            )
+            + self.explore_island(
+                grid, island_id, current_row - 1, current_column
+            )
+            + self.explore_island(
+                grid, island_id, current_row, current_column + 1
+            )
+            + self.explore_island(
+                grid, island_id, current_row, current_column - 1
+            )
+        )
+
+
+
+
+
+
+
+
+
+
+Question 3
+
+
+364. Nested List Weight Sum II
+Medium
+Topics
+Companies
+You are given a nested list of integers nestedList. Each element is either an integer or a list whose elements may also be integers or other lists.
+
+The depth of an integer is the number of lists that it is inside of. For example, the nested list [1,[2,2],[[3],2],1] has each integer's value set to its depth. Let maxDepth be the maximum depth of any integer.
+
+The weight of an integer is maxDepth - (the depth of the integer) + 1.
+
+Return the sum of each integer in nestedList multiplied by its weight.
+
+ 
+
+Example 1:
+
+
+Input: nestedList = [[1,1],2,[1,1]]
+Output: 8
+Explanation: Four 1's with a weight of 1, one 2 with a weight of 2.
+1*1 + 1*1 + 2*2 + 1*1 + 1*1 = 8
+Example 2:
+
+
+Input: nestedList = [1,[4,[6]]]
+Output: 17
+Explanation: One 1 at depth 3, one 4 at depth 2, and one 6 at depth 1.
+1*3 + 4*2 + 6*1 = 17
+ 
+
+Constraints:
+
+1 <= nestedList.length <= 50
+The values of the integers in the nested list is in the range [-100, 100].
+The maximum depth of any integer is less than or equal to 50.
+There are no empty lists.
+
+
+
+
+
+class Solution {
+public:
+    int depthSumInverse(vector<NestedInteger>& nestedList) {
+        int maxDepth = findMaxDepth(nestedList);
+        return weightedSum(nestedList, 1, maxDepth);
+    }
+    
+    int findMaxDepth(vector<NestedInteger>& list) {
+        int maxDepth = 1;
+        for (NestedInteger nested : list) {
+            if (!nested.isInteger() && nested.getList().size() > 0) {
+                maxDepth = max(maxDepth, 1 + findMaxDepth(nested.getList()));
+            }
+        }
+        return maxDepth;
+    }
+    
+    int weightedSum(vector<NestedInteger>& list, int depth, int maxDepth) {
+        int answer = 0;
+        for (NestedInteger nested : list) {
+            if (nested.isInteger()) {
+                answer += nested.getInteger() * (maxDepth - depth + 1);
+            } else {
+                answer += weightedSum(nested.getList(), depth + 1, maxDepth);
+            }
+        }
+        return answer;
+    }
+};
